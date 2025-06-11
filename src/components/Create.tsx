@@ -19,13 +19,39 @@ import {
 } from 'lucide-react';
 import * as parserBabel from 'prettier/parser-babel';
 import * as prettier from 'prettier/standalone';
-import type React from 'react';
 import type { KeyboardEvent } from 'react';
+import type React from 'react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { generateCodeWithOpenAI } from '../utils/openai';
 import { Button } from './ui/Button';
+
+/**
+ * Profile screen component
+ */
+function ProfileScreen() {
+	const navigate = useNavigate();
+
+	return (
+		<div style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+			<p style={{ fontSize: 24, marginBottom: 20 }}>User Profile</p>
+			<button
+				type="button"
+				onClick={() => navigate(-1)}
+				style={{
+					padding: 10,
+					backgroundColor: 'green',
+					borderRadius: 5,
+				}}
+			>
+				<p style={{ color: 'white' }}>Go Back</p>
+			</button>
+		</div>
+	);
+}
+
+export default ProfileScreen;
 
 export const Create: React.FC = () => {
 	const navigate = useNavigate();
@@ -77,13 +103,20 @@ export const Create: React.FC = () => {
 		try {
 			const formattedCode = await prettier.format(code, {
 				parser: 'babel',
-				plugins: [parserBabel],
+				plugins: [parserBabel, '@trivago/prettier-plugin-sort-imports'],
 				semi: true,
 				singleQuote: true,
 				trailingComma: 'es5',
-				printWidth: 80,
+				printWidth: 100,
 				tabWidth: 2,
 				useTabs: true,
+				bracketSpacing: true,
+				jsxBracketSameLine: false,
+				arrowParens: 'avoid',
+				endOfLine: 'auto',
+				importOrder: ['^react', '^@react-navigation', '^react-native', '^[./]'],
+				importOrderSeparation: true,
+				importOrderSortSpecifiers: true,
 			});
 			return formattedCode;
 		} catch (error) {
@@ -94,6 +127,7 @@ export const Create: React.FC = () => {
 
 	const handleExecute = async () => {
 		const id = `exec-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
 		setConsoleMessages((prev) => [...prev, { id, message: `🔄 Executing code... (${new Date().toLocaleTimeString()})` }]);
 
 		try {
@@ -103,19 +137,14 @@ export const Create: React.FC = () => {
 				throw new Error('No file selected');
 			}
 
-			// Format the code before execution
 			const formattedCode = await formatCode(currentFile);
+
 			setFiles((prev) => ({ ...prev, [selectedFile]: formattedCode }));
 
 			const previewFrame = document.createElement('iframe');
+
 			previewFrame.style.display = 'none';
 			document.body.appendChild(previewFrame);
-
-			// Transform the code to avoid module issues
-			const transformedCode = formattedCode
-				.replace(/export\s+default\s+function\s+(\w+)/, 'function $1')
-				.replace(/export\s+default\s+const\s+(\w+)/, 'const $1')
-				.replace(/export\s+default\s+(\w+)/, 'const $1');
 
 			const htmlContent = `
 				<!DOCTYPE html>
@@ -126,7 +155,6 @@ export const Create: React.FC = () => {
 						<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
 						<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 						<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-						<script src="https://cdn.tailwindcss.com"></script>
 						<style>
 							body { margin: 0; padding: 0; }
 							#root { min-height: 100vh; }
@@ -135,12 +163,68 @@ export const Create: React.FC = () => {
 					<body>
 						<div id="root"></div>
 						<script type="text/babel">
-							const { useState, useEffect } = React;
-							${transformedCode}
+							// Mock React Navigation
+							const ReactNavigation = {
+								NavigationContainer: ({ children }) => children,
+								createStackNavigator: () => ({
+									Navigator: ({ children }) => children,
+									Screen: ({ component: Component }) => <Component />
+								})
+							};
+
+							// Mock React Native components
+							const ReactNative = {
+								View: 'div',
+								Text: 'p',
+								TouchableOpacity: 'button',
+								StyleSheet: {
+									create: (styles) => styles
+								}
+							};
+
+							// Clean up the code
+							const cleanCode = \`${formattedCode}\`
+								// Remove semicolons after imports
+								.replace(/import[^;]+;/g, (match) => match.replace(/;$/, ''))
+								// Remove empty lines
+								.replace(/\\n\\s*\\n/g, '\\n')
+								// Remove extra spaces
+								.replace(/\\s+/g, ' ')
+								.trim();
+
+							// Replace imports and exports with our mocks
+							const code = cleanCode
+								.replace(/import\\s*\\{[^}]*\\}\\s*from\\s*['"]@react-navigation\\/[^'"]*['"]/g, '')
+								.replace(/import\\s*\\{[^}]*\\}\\s*from\\s*['"]react-native['"]/g, '')
+								.replace(/import\\s+React\\s+from\\s+['"]react['"]/g, '')
+								.replace(/import\\s+([^;]+)\\s+from\\s+['"][^'"]+['"]/g, '')
+								.replace(/export\\s+default\\s+function\\s+(\\w+)/g, 'function $1')
+								.replace(/export\\s+default\\s+const\\s+(\\w+)/g, 'const $1')
+								.replace(/export\\s+default\\s+(\\w+)/g, 'const $1')
+								.replace(/View/g, 'div')
+								.replace(/Text/g, 'p')
+								.replace(/TouchableOpacity/g, 'button')
+								.replace(/style=\\{styles\\.(\\w+)\\}/g, 'className="$1"')
+								.replace(/onPress/g, 'onClick');
+
+							// Execute the modified code
+							const transformedCode = Babel.transform(code, { 
+								presets: ['react'],
+								plugins: [
+									['transform-react-jsx', { pragma: 'React.createElement' }]
+								]
+							}).code;
+
+							// Add our mocks to the global scope
+							window.NavigationContainer = ReactNavigation.NavigationContainer;
+							window.createStackNavigator = ReactNavigation.createStackNavigator;
+
+							// Execute the code
+							eval(transformedCode);
 							
 							// Render the app
 							const root = document.getElementById('root');
-							ReactDOM.createRoot(root).render(React.createElement(App));
+							ReactDOM.createRoot(root).render(React.createElement(window.App));
 						</script>
 					</body>
 				</html>
@@ -153,7 +237,6 @@ export const Create: React.FC = () => {
 				frameDoc.write(htmlContent);
 				frameDoc.close();
 
-				// Log success
 				setConsoleMessages((prev) => [...prev, {
 					id: `success-${Date.now()}`,
 					message: '✅ Code executed successfully',
@@ -270,45 +353,17 @@ export const Create: React.FC = () => {
 
 			for (const [key, value] of Object.entries(files)) {
 				const filePath = key.startsWith('src/') ? key : `src/${key}`;
-				// Transform React Native imports to web components
-				const processedContent = value
-					.replace(/import\s*\{[^}]*\}\s*from\s*['"]react-native['"]/g, (match) => {
-						const imports = match.match(/\{([^}]*)\}/)?.[1] || '';
-						return imports.split(',').map((c: string) => `const ${c.trim()} = 'div';`).join('\n');
-					})
-					.replace(/import[^;]*from\s*['"]react-native['"]/g, '')
-					.replace(/import[^;]*from\s*['"]@react-navigation\/[^'"]*['"]/g, '')
-					.replace(/import[^;]*from\s*['"]react-native-safe-area-context['"]/g, '')
-					.replace(/require\(['"][^'"]*['"]\)/g, '')
-					.replace(/export\s+default\s+function\s+(\w+)/, 'function $1')
-					.replace(/export\s+default\s+const\s+(\w+)/, 'const $1')
-					.replace(/export\s+default\s+(\w+)/, 'const $1')
-					.replace(/View/g, 'div')
-					.replace(/Text/g, 'p')
-					.replace(/TouchableOpacity/g, 'button')
-					.replace(/StyleSheet\.create\(([^)]*)\)/g, (_, styles) => {
-						return styles.replace(/(\w+):\s*\{([^}]*)\}/g, (_: string, key: string, value: string) => {
-							return `"${key}": {${value}}`;
-						});
-					})
-					.replace(/style=\{styles\.(\w+)\}/g, 'className="$1"')
-					.replace(/onPress/g, 'onClick');
-
-				unformattedFiles[filePath] = processedContent;
-			}
-
-			// Formatter automatiquement tous les fichiers
-			const formattedFiles: Record<string, string> = {};
-			for (const [filePath, code] of Object.entries(unformattedFiles)) {
-				formattedFiles[filePath] = await formatCode(code);
+				// Format the code before storing it
+				const formattedCode = await formatCode(value);
+				unformattedFiles[filePath] = formattedCode;
 			}
 
 			setFiles((prevFiles) => ({
 				...prevFiles,
-				...formattedFiles,
+				...unformattedFiles,
 			}));
 
-			const firstFile = Object.keys(formattedFiles)[0];
+			const firstFile = Object.keys(unformattedFiles)[0];
 			if (firstFile) {
 				setSelectedFile(firstFile);
 			}
@@ -316,7 +371,7 @@ export const Create: React.FC = () => {
 			const successId = `success-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 			setConsoleMessages((prev) => [...prev, {
 				id: successId,
-				message: `✨ Generated ${Object.keys(formattedFiles).length} files at ${new Date().toLocaleTimeString()}`,
+				message: `✨ Generated ${Object.keys(unformattedFiles).length} files at ${new Date().toLocaleTimeString()}`,
 			}]);
 			setPrompt('');
 		} catch (error) {
@@ -465,7 +520,6 @@ export const Create: React.FC = () => {
 											setFiles((prev) => ({ ...prev, [selectedFile]: value }));
 										}}
 										onKeyDown={(event: KeyboardEvent<HTMLDivElement>) => {
-											// Add keyboard shortcut for execution (Cmd/Ctrl + Enter)
 											if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
 												event.preventDefault();
 												handleExecute();
@@ -495,6 +549,8 @@ export const Create: React.FC = () => {
 													<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
 													<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 													<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+													<script src="https://unpkg.com/@react-navigation/native@6.1.9/dist/index.umd.js"></script>
+													<script src="https://unpkg.com/@react-navigation/stack@6.3.20/dist/index.umd.js"></script>
 													<style>
 														body { margin: 0; padding: 0; }
 														#root { min-height: 100vh; }
@@ -503,6 +559,13 @@ export const Create: React.FC = () => {
 												<body>
 													<div id="root"></div>
 													<script type="text/babel">
+														// Mock React Navigation
+														const NavigationContainer = ({ children }) => children;
+														const createStackNavigator = () => ({
+															Navigator: ({ children }) => children,
+															Screen: ({ component: Component }) => <Component />
+														});
+
 														${files['src/App.tsx']
 			.replace(/export\s+default\s+function\s+(\w+)/, 'function $1')
 			.replace(/export\s+default\s+const\s+(\w+)/, 'const $1')
