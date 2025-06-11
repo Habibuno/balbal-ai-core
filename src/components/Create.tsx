@@ -17,6 +17,8 @@ import {
 	Terminal,
 	Wand2,
 } from 'lucide-react';
+import * as parserBabel from 'prettier/parser-babel';
+import * as prettier from 'prettier/standalone';
 import type React from 'react';
 import type { KeyboardEvent } from 'react';
 import { useState } from 'react';
@@ -71,7 +73,26 @@ export const Create: React.FC = () => {
 		}
 	};
 
-	const handleExecute = () => {
+	const formatCode = async (code: string) => {
+		try {
+			const formattedCode = await prettier.format(code, {
+				parser: 'babel',
+				plugins: [parserBabel],
+				semi: true,
+				singleQuote: true,
+				trailingComma: 'es5',
+				printWidth: 80,
+				tabWidth: 2,
+				useTabs: true,
+			});
+			return formattedCode;
+		} catch (error) {
+			console.error('Error formatting code:', error);
+			return code;
+		}
+	};
+
+	const handleExecute = async () => {
 		const id = `exec-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 		setConsoleMessages((prev) => [...prev, { id, message: `🔄 Executing code... (${new Date().toLocaleTimeString()})` }]);
 
@@ -82,13 +103,22 @@ export const Create: React.FC = () => {
 				throw new Error('No file selected');
 			}
 
-			const previewFrame = document.createElement('iframe');
+			// Format the code before execution
+			const formattedCode = await formatCode(currentFile);
+			setFiles((prev) => ({ ...prev, [selectedFile]: formattedCode }));
 
+			const previewFrame = document.createElement('iframe');
 			previewFrame.style.display = 'none';
 			document.body.appendChild(previewFrame);
 
+			// Transform the code to avoid module issues
+			const transformedCode = formattedCode
+				.replace(/export\s+default\s+function\s+(\w+)/, 'function $1')
+				.replace(/export\s+default\s+const\s+(\w+)/, 'const $1')
+				.replace(/export\s+default\s+(\w+)/, 'const $1');
+
 			const htmlContent = `
-			<!DOCTYPE html>
+				<!DOCTYPE html>
 				<html>
 					<head>
 						<meta charset="UTF-8">
@@ -96,13 +126,26 @@ export const Create: React.FC = () => {
 						<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
 						<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 						<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+						<script src="https://cdn.tailwindcss.com"></script>
+						<style>
+							body { margin: 0; padding: 0; }
+							#root { min-height: 100vh; }
+						</style>
 					</head>
 					<body>
 						<div id="root"></div>
-						<script type="text/babel">${currentFile}</script>
+						<script type="text/babel">
+							const { useState, useEffect } = React;
+							${transformedCode}
+							
+							// Render the app
+							const root = document.getElementById('root');
+							ReactDOM.createRoot(root).render(React.createElement(App));
+						</script>
 					</body>
 				</html>
 			`;
+
 			const frameDoc = previewFrame.contentDocument || previewFrame.contentWindow?.document;
 
 			if (frameDoc) {
@@ -159,7 +202,7 @@ export const Create: React.FC = () => {
 						.split('')
 						.filter(char => {
 							const code = char.charCodeAt(0);
-							return code >= 32 && code !== 127; // Garder uniquement les caractères imprimables
+							return code >= 32 && code !== 127;
 						})
 						.join('')
 						.replace(/\\n/g, '\n')
@@ -173,7 +216,6 @@ export const Create: React.FC = () => {
 					console.warn('Cleaned response:', cleanedResponse);
 
 					try {
-						// Essayer de parser la réponse comme JSON
 						const parsedResponse = JSON.parse(cleanedResponse);
 						if (typeof parsedResponse === 'object' && parsedResponse !== null) {
 							console.warn('Parsed response is an object');
@@ -216,7 +258,6 @@ export const Create: React.FC = () => {
 				} catch (e) {
 					console.warn('Parse error:', e);
 					console.warn('Using raw response as App.tsx');
-
 					files = { 'App.tsx': response };
 				}
 			} else {
@@ -225,29 +266,49 @@ export const Create: React.FC = () => {
 
 			console.warn('Final files object:', files);
 
-			const newFiles: Record<string, string> = {};
+			const unformattedFiles: Record<string, string> = {};
 
 			for (const [key, value] of Object.entries(files)) {
 				const filePath = key.startsWith('src/') ? key : `src/${key}`;
+				// Transform React Native imports to web components
 				const processedContent = value
-					.replace(/\\n/g, '\n')
-					.replace(/\\r/g, '\r')
-					.replace(/\\t/g, '\t')
-					.replace(/\\"/g, '"')
-					.replace(/\\\\/g, '\\');
+					.replace(/import\s*\{[^}]*\}\s*from\s*['"]react-native['"]/g, (match) => {
+						const imports = match.match(/\{([^}]*)\}/)?.[1] || '';
+						return imports.split(',').map((c: string) => `const ${c.trim()} = 'div';`).join('\n');
+					})
+					.replace(/import[^;]*from\s*['"]react-native['"]/g, '')
+					.replace(/import[^;]*from\s*['"]@react-navigation\/[^'"]*['"]/g, '')
+					.replace(/import[^;]*from\s*['"]react-native-safe-area-context['"]/g, '')
+					.replace(/require\(['"][^'"]*['"]\)/g, '')
+					.replace(/export\s+default\s+function\s+(\w+)/, 'function $1')
+					.replace(/export\s+default\s+const\s+(\w+)/, 'const $1')
+					.replace(/export\s+default\s+(\w+)/, 'const $1')
+					.replace(/View/g, 'div')
+					.replace(/Text/g, 'p')
+					.replace(/TouchableOpacity/g, 'button')
+					.replace(/StyleSheet\.create\(([^)]*)\)/g, (_, styles) => {
+						return styles.replace(/(\w+):\s*\{([^}]*)\}/g, (_: string, key: string, value: string) => {
+							return `"${key}": {${value}}`;
+						});
+					})
+					.replace(/style=\{styles\.(\w+)\}/g, 'className="$1"')
+					.replace(/onPress/g, 'onClick');
 
-				newFiles[filePath] = processedContent;
-				console.warn(`Creating file: ${filePath} with content length: ${processedContent.length}`);
+				unformattedFiles[filePath] = processedContent;
 			}
 
-			console.warn('Files to be created:', Object.keys(newFiles));
+			// Formatter automatiquement tous les fichiers
+			const formattedFiles: Record<string, string> = {};
+			for (const [filePath, code] of Object.entries(unformattedFiles)) {
+				formattedFiles[filePath] = await formatCode(code);
+			}
 
 			setFiles((prevFiles) => ({
 				...prevFiles,
-				...newFiles,
+				...formattedFiles,
 			}));
 
-			const firstFile = Object.keys(newFiles)[0];
+			const firstFile = Object.keys(formattedFiles)[0];
 			if (firstFile) {
 				setSelectedFile(firstFile);
 			}
@@ -255,7 +316,7 @@ export const Create: React.FC = () => {
 			const successId = `success-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 			setConsoleMessages((prev) => [...prev, {
 				id: successId,
-				message: `✨ Generated ${Object.keys(newFiles).length} files at ${new Date().toLocaleTimeString()}`,
+				message: `✨ Generated ${Object.keys(formattedFiles).length} files at ${new Date().toLocaleTimeString()}`,
 			}]);
 			setPrompt('');
 		} catch (error) {
@@ -425,29 +486,37 @@ export const Create: React.FC = () => {
 									</div>
 									<iframe
 										srcDoc={`
-                      <!DOCTYPE html>
-                      <html>
-                        <head>
-                          <meta charset="UTF-8" />
-                          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-                          <script src="https://cdn.tailwindcss.com"></script>
-                          <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-                          <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-                          <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-                        </head>
-                        <body>
-                          <div id="root"></div>
-                          <script type="text/babel">
-                            ${files['src/App.tsx']}
-                            
-                            const root = ReactDOM.createRoot(document.getElementById('root'));
-                            root.render(React.createElement(App));
-                          </script>
-                        </body>
-                      </html>
-                    `}
+											<!DOCTYPE html>
+											<html>
+												<head>
+													<meta charset="UTF-8" />
+													<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+													<script src="https://cdn.tailwindcss.com"></script>
+													<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+													<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+													<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+													<style>
+														body { margin: 0; padding: 0; }
+														#root { min-height: 100vh; }
+													</style>
+												</head>
+												<body>
+													<div id="root"></div>
+													<script type="text/babel">
+														${files['src/App.tsx']
+			.replace(/export\s+default\s+function\s+(\w+)/, 'function $1')
+			.replace(/export\s+default\s+const\s+(\w+)/, 'const $1')
+			.replace(/export\s+default\s+(\w+)/, 'const $1')}
+														
+														// Render the app
+														const root = document.getElementById('root');
+														ReactDOM.createRoot(root).render(React.createElement(App));
+													</script>
+												</body>
+											</html>
+										`}
 										className="h-[calc(100%-2rem)] w-full bg-white"
-										sandbox="allow-scripts allow-same-origin"
+										sandbox="allow-scripts"
 										title="preview"
 									/>
 									<div className="flex h-2 items-center justify-center">
