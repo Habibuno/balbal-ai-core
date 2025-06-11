@@ -132,14 +132,17 @@ export const Create: React.FC = () => {
 
 		try {
 			const currentFile = files[selectedFile];
+
 			if (!currentFile) {
 				throw new Error('No file selected');
 			}
 
 			const formattedCode = await formatCode(currentFile);
+
 			setFiles((prev) => ({ ...prev, [selectedFile]: formattedCode }));
 
 			const previewFrame = document.createElement('iframe');
+
 			previewFrame.style.display = 'none';
 			document.body.appendChild(previewFrame);
 
@@ -152,7 +155,6 @@ export const Create: React.FC = () => {
 						<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
 						<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 						<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-						<script src="https://unpkg.com/react-native-web@0.19.9/dist/index.js"></script>
 						<style>
 							body { margin: 0; padding: 0; }
 							#root { min-height: 100vh; }
@@ -162,60 +164,67 @@ export const Create: React.FC = () => {
 						<div id="root"></div>
 						<script type="text/babel">
 							// Mock React Navigation
-							const NavigationContainer = ({ children }) => children;
-							const createStackNavigator = () => ({
-								Navigator: ({ children }) => children,
-								Screen: ({ component: Component, name, options }) => {
-									const ScreenComponent = () => {
-										if (name === 'Home') {
-											return React.createElement('div', { style: { padding: 20 } },
-												React.createElement('h1', null, 'Home Screen'),
-												React.createElement('p', null, 'Welcome to the home screen!')
-											);
-										}
-										return React.createElement(Component);
-									};
-									return React.createElement(ScreenComponent);
-								}
-							});
+							const ReactNavigation = {
+								NavigationContainer: ({ children }) => children,
+								createStackNavigator: () => ({
+									Navigator: ({ children }) => children,
+									Screen: ({ component: Component }) => <Component />
+								})
+							};
 
-							// Transform the code
-							const transformedCode = Babel.transform(\`${formattedCode}\`, {
-								presets: ['react', 'typescript'],
-								plugins: [
-									['transform-react-jsx', { 
-										pragma: 'React.createElement',
-										pragmaFrag: 'React.Fragment'
-									}]
-								],
-								filename: '${selectedFile}'
-							}).code;
-
-							// Create a module-like environment
-							const module = { exports: {} };
-							const require = (name) => {
-								switch(name) {
-									case 'react':
-										return React;
-									case 'react-native':
-										return ReactNative;
-									case '@react-navigation/native':
-										return { NavigationContainer, createStackNavigator };
-									default:
-										return {};
+							// Mock React Native components
+							const ReactNative = {
+								View: 'div',
+								Text: 'p',
+								TouchableOpacity: 'button',
+								StyleSheet: {
+									create: (styles) => styles
 								}
 							};
 
-							// Execute the transformed code
-							const executeCode = new Function('module', 'exports', 'require', 'React', 'ReactNative', transformedCode);
-							executeCode(module, module.exports, require, React, ReactNative);
+							// Clean up the code
+							const cleanCode = \`${formattedCode}\`
+								// Remove semicolons after imports
+								.replace(/import[^;]+;/g, (match) => match.replace(/;$/, ''))
+								// Remove empty lines
+								.replace(/\\n\\s*\\n/g, '\\n')
+								// Remove extra spaces
+								.replace(/\\s+/g, ' ')
+								.trim();
 
-							// Get the App component from exports
-							const App = module.exports.default || module.exports;
+							// Replace imports and exports with our mocks
+							const code = cleanCode
+								.replace(/import\\s*\\{[^}]*\\}\\s*from\\s*['"]@react-navigation\\/[^'"]*['"]/g, '')
+								.replace(/import\\s*\\{[^}]*\\}\\s*from\\s*['"]react-native['"]/g, '')
+								.replace(/import\\s+React\\s+from\\s+['"]react['"]/g, '')
+								.replace(/import\\s+([^;]+)\\s+from\\s+['"][^'"]+['"]/g, '')
+								.replace(/export\\s+default\\s+function\\s+(\\w+)/g, 'function $1')
+								.replace(/export\\s+default\\s+const\\s+(\\w+)/g, 'const $1')
+								.replace(/export\\s+default\\s+(\\w+)/g, 'const $1')
+								.replace(/View/g, 'div')
+								.replace(/Text/g, 'p')
+								.replace(/TouchableOpacity/g, 'button')
+								.replace(/style=\\{styles\\.(\\w+)\\}/g, 'className="$1"')
+								.replace(/onPress/g, 'onClick');
 
+							// Execute the modified code
+							const transformedCode = Babel.transform(code, { 
+								presets: ['react'],
+								plugins: [
+									['transform-react-jsx', { pragma: 'React.createElement' }]
+								]
+							}).code;
+
+							// Add our mocks to the global scope
+							window.NavigationContainer = ReactNavigation.NavigationContainer;
+							window.createStackNavigator = ReactNavigation.createStackNavigator;
+
+							// Execute the code
+							eval(transformedCode);
+							
 							// Render the app
 							const root = document.getElementById('root');
-							ReactDOM.createRoot(root).render(React.createElement(App));
+							ReactDOM.createRoot(root).render(React.createElement(window.App));
 						</script>
 					</body>
 				</html>
@@ -540,7 +549,6 @@ export const Create: React.FC = () => {
 													<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
 													<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 													<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-													<script src="https://unpkg.com/react-native-web@0.19.9/dist/index.js"></script>
 													<script src="https://unpkg.com/@react-navigation/native@6.1.9/dist/index.umd.js"></script>
 													<script src="https://unpkg.com/@react-navigation/stack@6.3.20/dist/index.umd.js"></script>
 													<style>
@@ -551,70 +559,18 @@ export const Create: React.FC = () => {
 												<body>
 													<div id="root"></div>
 													<script type="text/babel">
-														// Create a module-like environment
-														const module = { exports: {} };
-														
-														// Define require function first
-														const require = (name) => {
-															switch(name) {
-																case 'react':
-																	return React;
-																case 'react-native':
-																	return ReactNative;
-																case '@react-navigation/native':
-																	return { NavigationContainer, createStackNavigator };
-																case '@react-navigation/stack':
-																	return { createStackNavigator };
-																default:
-																	return {};
-															}
-														};
-
 														// Mock React Navigation
 														const NavigationContainer = ({ children }) => children;
 														const createStackNavigator = () => ({
 															Navigator: ({ children }) => children,
-															Screen: ({ component: Component, name, options }) => {
-																const ScreenComponent = () => {
-																	if (name === 'Home') {
-																		return React.createElement(View, { style: { padding: 20 } },
-																			React.createElement(Text, { style: { fontSize: 24, fontWeight: 'bold' } }, 'Home Screen'),
-																			React.createElement(Text, { style: { marginTop: 10 } }, 'Welcome to the home screen!')
-																		);
-																	}
-																	return React.createElement(Component);
-																};
-																return React.createElement(ScreenComponent);
-															}
+															Screen: ({ component: Component }) => <Component />
 														});
 
-														// Now we can use require to get React Native
-														const ReactNative = require('react-native');
-														const { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } = ReactNative;
-
-														// Transform the code
-														const transformedCode = Babel.transform(\`${files['src/App.tsx']
+														${files['src/App.tsx']
 			.replace(/export\s+default\s+function\s+(\w+)/, 'function $1')
 			.replace(/export\s+default\s+const\s+(\w+)/, 'const $1')
-			.replace(/export\s+default\s+(\w+)/, 'const $1')
-			.replace(/import\s+(?:\S.*?)??from\s+['"].*?['"];?/g, '')}\`, {
-															presets: ['react', 'typescript'],
-															plugins: [
-																['transform-react-jsx', { 
-																	pragma: 'React.createElement',
-																	pragmaFrag: 'React.Fragment'
-																}]
-															],
-															filename: 'App.tsx'
-														}).code;
-
-														// Execute the transformed code
-														const executeCode = new Function('module', 'exports', 'require', 'React', 'ReactNative', transformedCode);
-														executeCode(module, module.exports, require, React, ReactNative);
-
-														// Get the App component from exports
-														const App = module.exports.default || module.exports;
-
+			.replace(/export\s+default\s+(\w+)/, 'const $1')}
+														
 														// Render the app
 														const root = document.getElementById('root');
 														ReactDOM.createRoot(root).render(React.createElement(App));
