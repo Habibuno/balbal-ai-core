@@ -1,0 +1,112 @@
+{
+	"hero": {
+		"title": "BalBal.io",
+		"subtitle": "モバイルアプリを生成。\n3クリックで。コード不要。\n純粋なAI。",
+		"cta": "今すぐ始める"
+	},
+	"features": {
+		"title": "なぜBalBal.ioを選ぶのか？",
+		"aiPowered": {
+			"title": "AI駆動",
+			"description": "高度なAIアルゴリズムで完璧なアプリを生成"
+		},
+		"noCode": {
+			"title": "コード不要",
+			"description": "プログラミング知識なしでプロフェッショナルなアプリを作成"
+		},
+		"deploy": {
+			"title": "即時デプロイ",
+			"description": "ワンクリックでアプリストアに公開"
+		}
+	},
+	"howItWorks": {
+		"title": "仕組み",
+		"steps": {
+			"describe": {
+				"title": "アプリを説明",
+				"description": "あなたのアプリのアイデアを教えてください"
+			},
+			"generate": {
+				"title": "AI生成",
+				"description": "私たちのAIがアプリの設計図を作成"
+			},
+			"customize": {
+				"title": "カスタマイズ",
+				"description": "デザインと機能を調整"
+			},
+			"deploy": {
+				"title": "デプロイ",
+				"description": "アプリを世界に公開"
+			}
+		}
+	},
+	"cta": {
+		"title": "モバイルアプリを作る準備はできましたか？",
+		"description": "すでにBalBal.ioでアプリをリリースした何千もの制作者に参加しましょう",
+		"button": "今すぐ作成を開始"
+	},
+	"footer": {
+		"copyright": "© 2025 BalBal.io - アプリ作成の未来"
+	},
+	"language": {
+		"select": "言語を選択",
+		"en": "English",
+		"fr": "Français",
+		"es": "Español"
+	},
+	"navigation": {
+		"backToHome": "ホームに戻る",
+		"pricing": "料金プラン"
+	},
+	"pricing": {
+		"title": "プランを選択",
+		"subtitle": "BalBal.ioで始めて、アイデアを即座にモバイルアプリに変換",
+		"mostPopular": "人気プラン",
+		"perMonth": "/月",
+		"tiers": {
+			"starter": {
+				"name": "スターター",
+				"price": "25",
+				"description": "テストや小規模プロジェクトに最適",
+				"features": [
+					"10,000トークン",
+					"標準サポート",
+					"基本テンプレート",
+					"コミュニティアクセス",
+					"メールサポート"
+				],
+				"button": "スタータープランで始める"
+			},
+			"pro": {
+				"name": "プロ",
+				"price": "75",
+				"description": "プロフェッショナル開発者向け",
+				"features": [
+					"50,000トークン",
+					"優先サポート",
+					"高度なテンプレート",
+					"APIアクセス",
+					"優先メールサポート",
+					"カスタムブランディング"
+				],
+				"button": "プロプランを選択"
+			},
+			"enterprise": {
+				"name": "エンタープライズ",
+				"price": "300",
+				"description": "大規模アプリケーション向け",
+				"features": [
+					"無制限トークン",
+					"専任サポート",
+					"カスタムテンプレート",
+					"完全APIアクセス",
+					"24/7サポート",
+					"カスタム連携",
+					"SLA保証"
+				],
+				"button": "営業に問い合わせ"
+			}
+		},
+		"earlyAccess": "BalBal.ioを無料で試す（MVP）"
+	}
+}

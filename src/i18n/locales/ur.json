@@ -1,0 +1,21 @@
+{
+	"common": {
+		"welcome": "خوش آمدید",
+		"loading": "لوڈ ہو رہا ہے",
+		"error": "خرابی",
+		"success": "کامیابی",
+		"cancel": "منسوخ کریں",
+		"save": "محفوظ کریں",
+		"edit": "ترمیم کریں",
+		"delete": "حذف کریں",
+		"confirm": "تصدیق کریں",
+		"back": "واپس",
+		"next": "اگلا",
+		"finish": "مکمل"
+	},
+	"navigation": {
+		"home": "ہوم",
+		"dashboard": "ڈیش بورڈ",
+		"settings": "ترتیبات"
+	}
+}

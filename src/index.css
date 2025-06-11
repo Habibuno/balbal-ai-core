@@ -1,0 +1,56 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+	body {
+		@apply bg-black font-rajdhani text-white;
+	}
+
+	h1,
+	h2,
+	h3,
+	h4,
+	h5,
+	h6 {
+		@apply font-orbitron;
+	}
+
+	code,
+	.mono {
+		@apply font-tech;
+	}
+}
+
+@layer components {
+	.neon-glow {
+		@apply relative;
+		text-shadow:
+			0 0 10px theme('colors.cyan.400'),
+			0 0 20px theme('colors.cyan.400'),
+			0 0 40px theme('colors.cyan.400');
+	}
+
+	.neon-border {
+		@apply relative border-2 border-cyan-400;
+		box-shadow:
+			0 0 10px theme('colors.cyan.400'),
+			inset 0 0 10px theme('colors.cyan.400');
+	}
+
+	.cyber-gradient {
+		@apply bg-gradient-to-r from-purple-600 via-cyan-400 to-pink-500;
+	}
+
+	.cyber-button {
+		@apply rounded-md border-2 border-cyan-400 bg-transparent px-8 py-3 font-orbitron font-bold text-cyan-400 transition-all duration-300 hover:scale-105 hover:bg-cyan-400/20 hover:shadow-[0_0_20px_theme(colors.cyan.400)] active:scale-95;
+	}
+
+	.card-hover {
+		@apply transition-transform duration-300 hover:scale-105 hover:shadow-xl;
+	}
+}

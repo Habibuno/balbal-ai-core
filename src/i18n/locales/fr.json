@@ -1,0 +1,112 @@
+{
+	"hero": {
+		"title": "BalBal.io",
+		"subtitle": "Générez votre application mobile.\nEn 3 clics. Sans code.\nIA pure.",
+		"cta": "Commencer Maintenant"
+	},
+	"features": {
+		"title": "Pourquoi Choisir BalBal.io ?",
+		"aiPowered": {
+			"title": "Propulsé par l'IA",
+			"description": "Algorithmes d'IA avancés pour générer votre application parfaite"
+		},
+		"noCode": {
+			"title": "Sans Code Requis",
+			"description": "Créez des applications professionnelles sans connaissances en programmation"
+		},
+		"deploy": {
+			"title": "Déploiement Instantané",
+			"description": "Déployez sur les stores en un clic"
+		}
+	},
+	"howItWorks": {
+		"title": "Comment Ça Marche",
+		"steps": {
+			"describe": {
+				"title": "Décrivez Votre App",
+				"description": "Parlez-nous de votre idée d'application"
+			},
+			"generate": {
+				"title": "Génération IA",
+				"description": "Notre IA crée le blueprint de votre app"
+			},
+			"customize": {
+				"title": "Personnalisez",
+				"description": "Affinez le design et les fonctionnalités"
+			},
+			"deploy": {
+				"title": "Déployez",
+				"description": "Lancez votre app dans le monde"
+			}
+		}
+	},
+	"cta": {
+		"title": "Prêt à Créer Votre Application Mobile ?",
+		"description": "Rejoignez des milliers de créateurs qui ont déjà lancé leurs applications avec BalBal.io",
+		"button": "Commencer Maintenant"
+	},
+	"footer": {
+		"copyright": "© 2025 BalBal.io - Le Futur de la Création d'Applications Mobiles"
+	},
+	"language": {
+		"select": "Sélectionner la langue",
+		"en": "English",
+		"fr": "Français",
+		"es": "Español"
+	},
+	"navigation": {
+		"backToHome": "Retour à l'Accueil",
+		"pricing": "Tarifs"
+	},
+	"pricing": {
+		"title": "Choisissez Votre Plan",
+		"subtitle": "Commencez avec BalBal.io et transformez vos idées en applications mobiles instantanément",
+		"mostPopular": "Plus Populaire",
+		"perMonth": "/mois",
+		"tiers": {
+			"starter": {
+				"name": "Starter",
+				"price": "25",
+				"description": "Parfait pour tester et les petits projets",
+				"features": [
+					"10 000 tokens",
+					"Support standard",
+					"Templates de base",
+					"Accès communauté",
+					"Support par email"
+				],
+				"button": "Démarrer avec Starter"
+			},
+			"pro": {
+				"name": "Pro",
+				"price": "75",
+				"description": "Idéal pour les entrepreneur acharné",
+				"features": [
+					"50 000 tokens",
+					"Support prioritaire",
+					"Templates avancés",
+					"Accès API",
+					"Support email prioritaire",
+					"Personnalisation de marque"
+				],
+				"button": "Passer Pro"
+			},
+			"enterprise": {
+				"name": "Enterprise",
+				"price": "300",
+				"description": "Pour les applications à grande échelle",
+				"features": [
+					"Tokens illimités",
+					"Support dédié",
+					"Templates personnalisés",
+					"Accès API complet",
+					"Support 24/7",
+					"Intégrations sur mesure",
+					"Garantie SLA"
+				],
+				"button": "Contacter les Ventes"
+			}
+		},
+		"earlyAccess": "Tester BalBal.io gratuitement (MVP)"
+	}
+}

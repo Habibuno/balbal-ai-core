@@ -1,0 +1,60 @@
+{
+	"hero": {
+		"title": "BalBal.io",
+		"subtitle": "Genera la tua app mobile.\nIn 3 click. Nessun codice.\nPura IA.",
+		"cta": "Inizia Ora"
+	},
+	"features": {
+		"title": "Perché scegliere BalBal.io?",
+		"aiPowered": {
+			"title": "Alimentato da IA",
+			"description": "Algoritmi IA avanzati per generare la tua app perfetta"
+		},
+		"noCode": {
+			"title": "Nessun Codice Richiesto",
+			"description": "Crea app professionali senza conoscenze di programmazione"
+		},
+		"deploy": {
+			"title": "Distribuzione Istantanea",
+			"description": "Pubblica negli app store con un click"
+		}
+	},
+	"howItWorks": {
+		"title": "Come Funziona",
+		"steps": {
+			"describe": {
+				"title": "Descrivi la Tua App",
+				"description": "Raccontaci la tua idea di app"
+			},
+			"generate": {
+				"title": "Generazione IA",
+				"description": "La nostra IA crea il blueprint della tua app"
+			},
+			"customize": {
+				"title": "Personalizza",
+				"description": "Affina il design e le funzionalità"
+			},
+			"deploy": {
+				"title": "Distribuisci",
+				"description": "Lancia la tua app nel mondo"
+			}
+		}
+	},
+	"cta": {
+		"title": "Pronto a Costruire la Tua App Mobile?",
+		"description": "Unisciti a migliaia di creatori che hanno già lanciato le loro app con BalBal.io",
+		"button": "Inizia a Creare Ora"
+	},
+	"footer": {
+		"copyright": "© 2025 BalBal.io - Il Futuro della Creazione di App"
+	},
+	"language": {
+		"select": "Seleziona lingua",
+		"en": "English",
+		"fr": "Français",
+		"es": "Español"
+	},
+	"navigation": {
+		"backToHome": "Torna alla Home"
+	}
+}

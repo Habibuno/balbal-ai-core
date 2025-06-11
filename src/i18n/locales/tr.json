@@ -1,0 +1,60 @@
+{
+	"hero": {
+		"title": "BalBal.io",
+		"subtitle": "Mobil uygulamanızı oluşturun.\n3 tıklama ile. Kod yok.\nSaf yapay zeka.",
+		"cta": "Hemen Başla"
+	},
+	"features": {
+		"title": "Neden BalBal.io?",
+		"aiPowered": {
+			"title": "Yapay Zeka Destekli",
+			"description": "Mükemmel uygulamanızı oluşturmak için gelişmiş yapay zeka algoritmaları"
+		},
+		"noCode": {
+			"title": "Kod Gerektirmez",
+			"description": "Programlama bilgisi olmadan profesyonel uygulamalar oluşturun"
+		},
+		"deploy": {
+			"title": "Anında Yayınlama",
+			"description": "Tek tıkla uygulama mağazalarında yayınlayın"
+		}
+	},
+	"howItWorks": {
+		"title": "Nasıl Çalışır",
+		"steps": {
+			"describe": {
+				"title": "Uygulamanızı Tanımlayın",
+				"description": "Uygulama fikrinizi bize anlatın"
+			},
+			"generate": {
+				"title": "Yapay Zeka Üretimi",
+				"description": "Yapay zekamız uygulama planınızı oluşturur"
+			},
+			"customize": {
+				"title": "Özelleştirin",
+				"description": "Tasarım ve özellikleri ince ayarlayın"
+			},
+			"deploy": {
+				"title": "Yayınlayın",
+				"description": "Uygulamanızı dünyaya sunun"
+			}
+		}
+	},
+	"cta": {
+		"title": "Mobil Uygulamanızı Oluşturmaya Hazır mısınız?",
+		"description": "BalBal.io ile uygulamalarını yayınlamış binlerce geliştiriciye katılın",
+		"button": "Şimdi Oluşturmaya Başlayın"
+	},
+	"footer": {
+		"copyright": "© 2025 BalBal.io - Uygulama Geliştirmenin Geleceği"
+	},
+	"language": {
+		"select": "Dil seçin",
+		"en": "English",
+		"fr": "Français",
+		"es": "Español"
+	},
+	"navigation": {
+		"backToHome": "Ana Sayfaya Dön"
+	}
+}

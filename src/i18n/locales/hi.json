@@ -1,0 +1,60 @@
+{
+	"hero": {
+		"title": "BalBal.io",
+		"subtitle": "अपना मोबाइल ऐप बनाएं।\n3 क्लिक में। कोड नहीं।\nशुद्ध AI।",
+		"cta": "अभी शुरू करें"
+	},
+	"features": {
+		"title": "BalBal.io क्यों चुनें?",
+		"aiPowered": {
+			"title": "AI संचालित",
+			"description": "उन्नत AI एल्गोरिदम से आपका परफेक्ट ऐप बनाएं"
+		},
+		"noCode": {
+			"title": "कोड की आवश्यकता नहीं",
+			"description": "प्रोग्रामिंग ज्ञान के बिना पेशेवर ऐप बनाएं"
+		},
+		"deploy": {
+			"title": "तत्काल डिप्लॉय",
+			"description": "एक क्लिक में ऐप स्टोर पर प्रकाशित करें"
+		}
+	},
+	"howItWorks": {
+		"title": "यह कैसे काम करता है",
+		"steps": {
+			"describe": {
+				"title": "अपना ऐप बताएं",
+				"description": "अपने ऐप के विचार के बारे में बताएं"
+			},
+			"generate": {
+				"title": "AI जनरेशन",
+				"description": "हमारा AI आपका ऐप ब्लूप्रिंट बनाता है"
+			},
+			"customize": {
+				"title": "कस्टमाइज़",
+				"description": "डिज़ाइन और फीचर्स को सुधारें"
+			},
+			"deploy": {
+				"title": "डिप्लॉय",
+				"description": "अपना ऐप दुनिया में लॉन्च करें"
+			}
+		}
+	},
+	"cta": {
+		"title": "अपना मोबाइल ऐप बनाने के लिए तैयार हैं?",
+		"description": "हजारों निर्माताओं से जुड़ें जिन्होंने पहले ही BalBal.io के साथ अपने ऐप लॉन्च कर दिए हैं",
+		"button": "अभी बनाना शुरू करें"
+	},
+	"footer": {
+		"copyright": "© 2025 BalBal.io - ऐप निर्माण का भविष्य"
+	},
+	"language": {
+		"select": "भाषा चुनें",
+		"en": "English",
+		"fr": "Français",
+		"es": "Español"
+	},
+	"navigation": {
+		"backToHome": "होम पर वापस जाएं"
+	}
+}

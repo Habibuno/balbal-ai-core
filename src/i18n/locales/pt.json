@@ -1,0 +1,60 @@
+{
+	"hero": {
+		"title": "BalBal.io",
+		"subtitle": "Gere seu aplicativo móvel.\nEm 3 cliques. Sem código.\nIA pura.",
+		"cta": "Começar Agora"
+	},
+	"features": {
+		"title": "Por que escolher BalBal.io?",
+		"aiPowered": {
+			"title": "Alimentado por IA",
+			"description": "Algoritmos avançados de IA para gerar seu aplicativo perfeito"
+		},
+		"noCode": {
+			"title": "Sem Código Necessário",
+			"description": "Crie aplicativos profissionais sem conhecimento de programação"
+		},
+		"deploy": {
+			"title": "Implantação Instantânea",
+			"description": "Publique nas lojas de aplicativos com um clique"
+		}
+	},
+	"howItWorks": {
+		"title": "Como Funciona",
+		"steps": {
+			"describe": {
+				"title": "Descreva Seu App",
+				"description": "Conte-nos sobre sua ideia de aplicativo"
+			},
+			"generate": {
+				"title": "Geração por IA",
+				"description": "Nossa IA cria o blueprint do seu app"
+			},
+			"customize": {
+				"title": "Personalize",
+				"description": "Ajuste o design e as funcionalidades"
+			},
+			"deploy": {
+				"title": "Implante",
+				"description": "Lance seu app para o mundo"
+			}
+		}
+	},
+	"cta": {
+		"title": "Pronto para Construir Seu Aplicativo Móvel?",
+		"description": "Junte-se a milhares de criadores que já lançaram seus aplicativos com BalBal.io",
+		"button": "Comece a Criar Agora"
+	},
+	"footer": {
+		"copyright": "© 2025 BalBal.io - O Futuro da Criação de Aplicativos Móveis"
+	},
+	"language": {
+		"select": "Selecionar idioma",
+		"en": "English",
+		"fr": "Français",
+		"es": "Español"
+	},
+	"navigation": {
+		"backToHome": "Voltar para Início"
+	}
+}

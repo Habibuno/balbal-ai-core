@@ -1,0 +1,112 @@
+{
+	"hero": {
+		"title": "BalBal.io",
+		"subtitle": "Genera tu aplicación móvil.\nEn 3 clics. Sin código.\nIA pura.",
+		"cta": "Empezar Ahora"
+	},
+	"features": {
+		"title": "¿Por Qué Elegir BalBal.io?",
+		"aiPowered": {
+			"title": "Impulsado por IA",
+			"description": "Algoritmos avanzados de IA para generar tu aplicación perfecta"
+		},
+		"noCode": {
+			"title": "Sin Código Requerido",
+			"description": "Crea aplicaciones profesionales sin conocimientos de programación"
+		},
+		"deploy": {
+			"title": "Despliegue Instantáneo",
+			"description": "Despliega en las tiendas de aplicaciones con un clic"
+		}
+	},
+	"howItWorks": {
+		"title": "Cómo Funciona",
+		"steps": {
+			"describe": {
+				"title": "Describe Tu App",
+				"description": "Cuéntanos sobre tu idea de aplicación"
+			},
+			"generate": {
+				"title": "Generación IA",
+				"description": "Nuestra IA crea el blueprint de tu app"
+			},
+			"customize": {
+				"title": "Personaliza",
+				"description": "Ajusta el diseño y las funcionalidades"
+			},
+			"deploy": {
+				"title": "Despliega",
+				"description": "Lanza tu app al mundo"
+			}
+		}
+	},
+	"cta": {
+		"title": "¿Listo para Construir Tu Aplicación Móvil?",
+		"description": "Únete a miles de creadores que ya han lanzado sus aplicaciones con BalBal.io",
+		"button": "Empezar a Crear Ahora"
+	},
+	"footer": {
+		"copyright": "© 2025 BalBal.io - El Futuro de la Creación de Aplicaciones Móviles"
+	},
+	"language": {
+		"select": "Seleccionar idioma",
+		"en": "English",
+		"fr": "Français",
+		"es": "Español"
+	},
+	"navigation": {
+		"backToHome": "Volver al Inicio",
+		"pricing": "Precios"
+	},
+	"pricing": {
+		"title": "Elige Tu Plan",
+		"subtitle": "Comienza con BalBal.io y transforma tus ideas en aplicaciones móviles al instante",
+		"mostPopular": "Más Popular",
+		"perMonth": "/mes",
+		"tiers": {
+			"starter": {
+				"name": "Inicial",
+				"price": "25",
+				"description": "Perfecto para pruebas y proyectos pequeños",
+				"features": [
+					"10.000 tokens",
+					"Soporte estándar",
+					"Plantillas básicas",
+					"Acceso a comunidad",
+					"Soporte por email"
+				],
+				"button": "Comenzar con Inicial"
+			},
+			"pro": {
+				"name": "Pro",
+				"price": "75",
+				"description": "Ideal para desarrolladores profesionales",
+				"features": [
+					"50.000 tokens",
+					"Soporte prioritario",
+					"Plantillas avanzadas",
+					"Acceso API",
+					"Soporte email prioritario",
+					"Marca personalizada"
+				],
+				"button": "Elegir Pro"
+			},
+			"enterprise": {
+				"name": "Empresa",
+				"price": "300",
+				"description": "Para aplicaciones a gran escala",
+				"features": [
+					"Tokens ilimitados",
+					"Soporte dedicado",
+					"Plantillas personalizadas",
+					"Acceso API completo",
+					"Soporte 24/7",
+					"Integraciones personalizadas",
+					"Garantía SLA"
+				],
+				"button": "Contactar Ventas"
+			}
+		},
+		"earlyAccess": "Prueba BalBal.io gratis (MVP)"
+	}
+}

@@ -1,0 +1,60 @@
+{
+	"hero": {
+		"title": "BalBal.io",
+		"subtitle": "모바일 앱 생성.\n3번의 클릭. 코드 없이.\n순수 AI.",
+		"cta": "지금 시작하기"
+	},
+	"features": {
+		"title": "왜 BalBal.io인가?",
+		"aiPowered": {
+			"title": "AI 기반",
+			"description": "고급 AI 알고리즘으로 완벽한 앱 생성"
+		},
+		"noCode": {
+			"title": "코드 불필요",
+			"description": "프로그래밍 지식 없이 전문적인 앱 제작"
+		},
+		"deploy": {
+			"title": "즉시 배포",
+			"description": "앱 스토어에 원클릭 게시"
+		}
+	},
+	"howItWorks": {
+		"title": "작동 방식",
+		"steps": {
+			"describe": {
+				"title": "앱 설명",
+				"description": "당신의 앱 아이디어를 들려주세요"
+			},
+			"generate": {
+				"title": "AI 생성",
+				"description": "우리의 AI가 앱 청사진 생성"
+			},
+			"customize": {
+				"title": "커스터마이즈",
+				"description": "디자인과 기능 조정"
+			},
+			"deploy": {
+				"title": "배포",
+				"description": "앱을 세상에 출시"
+			}
+		}
+	},
+	"cta": {
+		"title": "모바일 앱을 만들 준비가 되셨나요?",
+		"description": "이미 BalBal.io로 앱을 출시한 수천 명의 제작자들과 함께하세요",
+		"button": "지금 만들기 시작"
+	},
+	"footer": {
+		"copyright": "© 2025 BalBal.io - 앱 제작의 미래"
+	},
+	"language": {
+		"select": "언어 선택",
+		"en": "English",
+		"fr": "Français",
+		"es": "Español"
+	},
+	"navigation": {
+		"backToHome": "홈으로 돌아가기"
+	}
+}

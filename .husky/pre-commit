@@ -1,0 +1,17 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Lint
+npm run lint
+
+# Tests
+npm run test
+
+# Vérification du formatage
+npm run format:check
+
+# Vérification des types
+npm run type-check
+
+# Vérification de sécurité
+npm run security:check 

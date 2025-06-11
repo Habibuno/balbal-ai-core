@@ -1,0 +1,60 @@
+{
+	"hero": {
+		"title": "BalBal.io",
+		"subtitle": "Jana aplikasi mudah alih anda.\nDalam 3 klik. Tanpa kod.\nAI tulen.",
+		"cta": "Mula Sekarang"
+	},
+	"features": {
+		"title": "Mengapa Pilih BalBal.io?",
+		"aiPowered": {
+			"title": "Dikuasakan oleh AI",
+			"description": "Algoritma AI termaju untuk menjana aplikasi sempurna anda"
+		},
+		"noCode": {
+			"title": "Tiada Kod Diperlukan",
+			"description": "Bina aplikasi profesional tanpa pengetahuan pengaturcaraan"
+		},
+		"deploy": {
+			"title": "Penerbitan Segera",
+			"description": "Terbitkan ke kedai aplikasi dengan satu klik"
+		}
+	},
+	"howItWorks": {
+		"title": "Bagaimana Ia Berfungsi",
+		"steps": {
+			"describe": {
+				"title": "Huraikan Aplikasi Anda",
+				"description": "Beritahu kami tentang idea aplikasi anda"
+			},
+			"generate": {
+				"title": "Penjanaan AI",
+				"description": "AI kami mencipta rangka aplikasi anda"
+			},
+			"customize": {
+				"title": "Sesuaikan",
+				"description": "Perhalusi reka bentuk dan ciri-ciri"
+			},
+			"deploy": {
+				"title": "Terbitkan",
+				"description": "Lancarkan aplikasi anda ke dunia"
+			}
+		}
+	},
+	"cta": {
+		"title": "Bersedia untuk Membina Aplikasi Mudah Alih Anda?",
+		"description": "Sertai ribuan pencipta yang telah melancarkan aplikasi mereka dengan BalBal.io",
+		"button": "Mula Cipta Sekarang"
+	},
+	"footer": {
+		"copyright": "© 2025 BalBal.io - Masa Depan Penciptaan Aplikasi"
+	},
+	"language": {
+		"select": "Pilih bahasa",
+		"en": "English",
+		"fr": "Français",
+		"es": "Español"
+	},
+	"navigation": {
+		"backToHome": "Kembali ke Laman Utama"
+	}
+}

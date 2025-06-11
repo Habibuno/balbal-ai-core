@@ -1,0 +1,106 @@
+{
+	"hero": {
+		"title": "BalBal.io",
+		"subtitle": "生成您的移动应用。\n三次点击。无需代码。\n纯人工智能。",
+		"cta": "立即开始"
+	},
+	"features": {
+		"title": "为什么选择 BalBal.io？",
+		"aiPowered": {
+			"title": "AI 驱动",
+			"description": "先进的 AI 算法生成您的完美应用"
+		},
+		"noCode": {
+			"title": "无需编码",
+			"description": "无需编程知识即可创建专业应用"
+		},
+		"deploy": {
+			"title": "即时部署",
+			"description": "一键发布到应用商店"
+		}
+	},
+	"howItWorks": {
+		"title": "工作原理",
+		"steps": {
+			"describe": {
+				"title": "描述您的应用",
+				"description": "告诉我们您的应用创意"
+			},
+			"generate": {
+				"title": "AI 生成",
+				"description": "我们的 AI 创建您的应用蓝图"
+			},
+			"customize": {
+				"title": "自定义",
+				"description": "调整设计和功能"
+			},
+			"deploy": {
+				"title": "部署",
+				"description": "将您的应用推向世界"
+			}
+		}
+	},
+	"cta": {
+		"title": "准备构建您的移动应用？",
+		"description": "加入已经使用 BalBal.io 发布应用的数千名创作者",
+		"button": "现在开始创建"
+	},
+	"footer": {
+		"copyright": "© 2025 BalBal.io - 应用程序创建的未来"
+	},
+	"language": {
+		"select": "选择语言",
+		"en": "English",
+		"fr": "Français",
+		"es": "Español"
+	},
+	"navigation": {
+		"backToHome": "返回首页",
+		"pricing": "定价"
+	},
+	"pricing": {
+		"title": "选择您的计划",
+		"subtitle": "开始使用 BalBal.io，立即将您的想法转化为移动应用",
+		"mostPopular": "最受欢迎",
+		"perMonth": "/月",
+		"tiers": {
+			"starter": {
+				"name": "入门版",
+				"price": "25",
+				"description": "适合测试和小型项目",
+				"features": ["10,000 代币", "标准支持", "基础模板", "社区访问", "邮件支持"],
+				"button": "选择入门版"
+			},
+			"pro": {
+				"name": "专业版",
+				"price": "75",
+				"description": "适合专业开发者",
+				"features": [
+					"50,000 代币",
+					"优先支持",
+					"高级模板",
+					"API 访问",
+					"优先邮件支持",
+					"自定义品牌"
+				],
+				"button": "选择专业版"
+			},
+			"enterprise": {
+				"name": "企业版",
+				"price": "300",
+				"description": "适合大规模应用",
+				"features": [
+					"无限代币",
+					"专属支持",
+					"自定义模板",
+					"完整 API 访问",
+					"24/7 支持",
+					"自定义集成",
+					"SLA 保证"
+				],
+				"button": "联系销售"
+			}
+		},
+		"earlyAccess": "免费试用 BalBal.io（MVP）"
+	}
+}
