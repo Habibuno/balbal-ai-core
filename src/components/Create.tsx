@@ -1,5 +1,6 @@
 import { Tab } from '@headlessui/react';
-import { ArrowLeft, Code2, Eye, Settings } from 'lucide-react';
+import { ArrowLeft, Code2, Eye, Play, Settings } from 'lucide-react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { CodeEditor } from './editor/CodeEditor';
@@ -9,53 +10,92 @@ import { Terminal } from './editor/Terminal';
 import { useEditor } from './editor/useEditor';
 import { Button } from './ui/Button';
 
+// Helper to generate unique IDs
+const generateUniqueId = () => `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+
 export const Create: React.FC = () => {
 	const navigate = useNavigate();
 	const { state, setState, compileProject, handleGenerateWithAI } = useEditor();
+	const [tabIndex, setTabIndex] = useState(0);
 
 	const handleExecute = async () => {
+		console.log('🔍 State :', state);
+
 		try {
+			setState(prev => ({
+				...prev,
+				consoleMessages: [
+					...prev.consoleMessages,
+					{ id: generateUniqueId(), message: '🔄 Compiling project...' },
+				],
+			}));
+
 			const entry = state.selectedFile;
-			const jsBundle = await compileProject(entry, state.files);
+			const result = await compileProject(entry, state.files);
+			let jsBundle = result.outputFiles[0].text;
+			jsBundle = jsBundle
+				.replace(/^import\s+React.+$/gm, '')
+				.replace(/^import\s+\*\s+as\s+jsxRuntime.+$/gm, '')
+				.replace(/^import\s+ReactDOM.+$/gm, '')
+				.replace(
+					/^import\s+\S.*(?:[\n\r\u2028\u2029]\s*|[\t\v\f \xA0\u1680\u2000-\u200A\u202F\u205F\u3000\uFEFF])from\s+['"]react\/jsx-runtime['"].*$/gm,
+					''
+				);
+			jsBundle = jsBundle.replace(
+				/^import\s+\{[^}]+\}\s+from\s+['"]react-native-web['"];?$/gm,
+				''
+			);
+			console.log('imports RNW dans bundle ?', jsBundle.includes('react-native-web'));
 
 			const html = `
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  <script src="https://unpkg.com/react-native-web/dist/index.umd.js"></script>
-  <style>html, body, #root { margin: 0; height: 100%; }</style>
-</head>
-<body>
-  <div id="root"></div>
-  <script type="module">
-    const { View, Text, TouchableOpacity, StyleSheet } = window['react-native-web'];
+  <head>
+    <meta charset="UTF-8" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>html, body, #root_preview { margin:0; padding:0; height:100%; }</style>
+  </head>
+  <body>
+    <div id="root_preview"></div>
+    <script type="module">
+			import React from 'https://esm.sh/react@18.2.0';
+			import ReactDOM from 'https://esm.sh/react-dom@18.2.0/client';
+			import * as RNW from 'https://esm.sh/react-native-web@0.18.10';
+			const { View, Text, StyleSheet } = RNW;
 
-    ${jsBundle}
 
-    const root = document.getElementById('root');
-    ReactDOM.createRoot(root).render(React.createElement(App));
-  </script>
-</body>
-</html>`;
+      ${jsBundle}
 
+      const root = ReactDOM.createRoot(document.getElementById('root_preview'));
+      root.render(React.createElement(App));
+    </script>
+  </body>
+</html>
+`;
+
+			const previewFrame = document.querySelector('iframe[title="preview"]') as HTMLIFrameElement;
+			if (previewFrame) previewFrame.srcdoc = html;
+
+			setTabIndex(1);
 			setState(prev => ({
 				...prev,
+				previewHtml: html,
 				consoleMessages: [...prev.consoleMessages, {
-					id: `preview-${Date.now()}`,
-					message: '✅ Project compiled and preview injected',
+					id: generateUniqueId(),
+					message: '✅ Project compiled and preview ready',
 				}],
 			}));
 		} catch (err) {
+			console.error('Compilation error:', err);
 			setState(prev => ({
 				...prev,
-				consoleMessages: [...prev.consoleMessages, {
-					id: `err-${Date.now()}`,
-					message: `❌ Compilation failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
-				}],
+				consoleMessages: [
+					...prev.consoleMessages,
+					{
+						id: generateUniqueId(),
+						message: `❌ Compilation failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
+					},
+				],
 			}));
 		}
 	};
@@ -75,9 +115,6 @@ export const Create: React.FC = () => {
 					</Button>
 					<h1 className="text-xl font-semibold text-white">BalBal.io Editor</h1>
 				</div>
-				<Button variant="outline" size="sm" icon={<Settings className="h-4 w-4" />}>
-					Settings
-				</Button>
 			</div>
 
 			{/* Main Content */}
@@ -92,7 +129,7 @@ export const Create: React.FC = () => {
 
 				{/* Editor and Preview */}
 				<div className="flex flex-1 flex-col overflow-hidden">
-					<Tab.Group>
+					<Tab.Group selectedIndex={tabIndex} onChange={setTabIndex}>
 						<Tab.List className="flex border-b border-gray-800 bg-black/30">
 							<Tab
 								className={({ selected }) =>
@@ -136,7 +173,7 @@ export const Create: React.FC = () => {
 								/>
 							</Tab.Panel>
 							<Tab.Panel className="h-full">
-								<Preview files={state.files} />
+								<Preview previewHtml={state.previewHtml} />
 							</Tab.Panel>
 						</Tab.Panels>
 					</Tab.Group>

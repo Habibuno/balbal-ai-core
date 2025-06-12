@@ -4,14 +4,15 @@ import CodeMirror from '@uiw/react-codemirror';
 import { CheckCheck, Copy, Play } from 'lucide-react';
 import type { KeyboardEvent } from 'react';
 import { useState } from 'react';
+
 import { Button } from '../ui/Button';
 
-interface CodeEditorProps {
+type CodeEditorProps = {
 	value: string;
 	onChange: (value: string) => void;
 	onExecute: () => void;
 	selectedFile: string;
-}
+};
 
 export const CodeEditor: React.FC<CodeEditorProps> = ({
 	value,

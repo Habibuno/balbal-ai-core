@@ -1,283 +1,386 @@
-import { useEffect, useRef, useState } from 'react';
 import * as esbuild from 'esbuild-wasm';
-import * as prettier from 'prettier/standalone';
-import * as parserBabel from 'prettier/parser-babel';
+import { useEffect, useRef, useState } from 'react';
+
+import type { EditorState } from '../../types/editor';
 import { generateCodeWithOpenAI } from '../../utils/openai';
 
-export interface ConsoleMessage {
-  id: string;
-  message: string;
+let esbuildInitPromise: Promise<void> | null = null;
+let isInitializing = false;
+const generateUniqueId = () => `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+
+function transformImports(files: Record<string, string>) {
+	return Object.fromEntries(
+		Object.entries(files).map(([filePath, content]) => {
+			let newContent = content;
+			newContent = newContent.replace(/from\s+['"]react-native['"]/g, 'from \'react-native-web\'');
+
+			return [filePath, newContent];
+		})
+	);
 }
 
-export interface EditorState {
-  selectedFile: string;
-  files: Record<string, string>;
-  isGenerating: boolean;
-  consoleMessages: ConsoleMessage[];
-  prompt: string;
-  esbuildReady: boolean;
+async function initializeEsbuild() {
+	if (esbuildInitPromise) return esbuildInitPromise;
+	if (isInitializing) {
+		return new Promise((resolve) => {
+			const checkInterval = setInterval(() => {
+				if (esbuildInitPromise) {
+					clearInterval(checkInterval);
+					resolve(esbuildInitPromise);
+				}
+			}, 100);
+		});
+	}
+
+	isInitializing = true;
+
+	try {
+		esbuildInitPromise = esbuild.initialize({
+			wasmURL: 'https://unpkg.com/esbuild-wasm@0.25.5/esbuild.wasm',
+			worker: false,
+		});
+
+		await esbuildInitPromise;
+		return esbuildInitPromise;
+	} catch (error) {
+		esbuildInitPromise = null;
+		isInitializing = false;
+		throw error;
+	}
 }
 
-export const useEditor = () => {
-  const [state, setState] = useState<EditorState>({
-    selectedFile: 'src/App.tsx',
-    files: {
-      'src/App.tsx': `export default function App() {
-        return (
-          <div className="p-4 min-h-screen bg-gradient-to-b from-gray-900 to-black text-white">
-            <div className="max-w-md mx-auto">
-              <h1 className="text-3xl font-bold mb-6 bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
-                Welcome to BalBal.io! 👋
-              </h1>
-              
-              <div className="space-y-6">
-                <div className="p-6 rounded-lg bg-gray-800/50 backdrop-blur border border-gray-700">
-                  <h2 className="text-xl font-semibold mb-4 text-cyan-400">Getting Started</h2>
-                  <p className="text-gray-300">
-                    Start by describing your app idea in the AI assistant panel.
-                    We'll help you create a beautiful, functional mobile application!
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      }`,
-    },
-    isGenerating: false,
-    consoleMessages: [
-      { id: 'init-1', message: '🚀 Initializing development environment...' },
-      { id: 'init-2', message: '✨ Dependencies installed successfully' },
-      { id: 'init-3', message: '🔧 Babel transpile ready' },
-      { id: 'init-4', message: '🎯 React runtime loaded' },
-    ],
-    prompt: '',
-    esbuildReady: false,
-  });
+export function useEditor() {
+	const [state, setState] = useState<EditorState>({
+		previewHtml: '',
+		selectedFile: 'src/App.tsx',
+		files: {
+			'src/App.tsx': `import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 
-  const initRef = useRef(false);
+export default function App() {
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>👋 Welcome to BalBal.io!</Text>
+      <Text style={styles.subtitle}>
+        Start building your mobile app by editing this file.
+      </Text>
+    </View>
+  );
+}
 
-  useEffect(() => {
-    const initEsbuild = async () => {
-      if (initRef.current || state.esbuildReady) return;
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#111',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  title: {
+    fontSize: 24,
+    color: '#0ff',
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#ccc',
+    textAlign: 'center',
+  },
+});`,
+		},
+		isGenerating: false,
+		consoleMessages: [
+			{ id: generateUniqueId(), message: '🚀 Initializing development environment...' },
+			{ id: generateUniqueId(), message: '✨ Dependencies installed successfully' },
+			{ id: generateUniqueId(), message: '🔧 Babel transpile ready' },
+			{ id: generateUniqueId(), message: '🎯 React runtime loaded' },
+		],
+		prompt: '',
+		esbuildReady: false,
+	});
+	const initRef = useRef(false);
 
-      try {
-        await esbuild.initialize({
-          wasmURL: 'https://unpkg.com/esbuild-wasm@0.19.8/esbuild.wasm',
-          worker: false,
-        });
-        initRef.current = true;
-        setState(prev => ({ ...prev, esbuildReady: true }));
-        setState(prev => ({
-          ...prev,
-          consoleMessages: [...prev.consoleMessages, {
-            id: `init-${Date.now()}`,
-            message: '🛠️ esbuild initialized',
-          }],
-        }));
-      } catch (err) {
-        console.error('Esbuild init failed:', err);
-        setState(prev => ({
-          ...prev,
-          consoleMessages: [...prev.consoleMessages, {
-            id: `error-${Date.now()}`,
-            message: `❌ Esbuild initialization failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
-          }],
-        }));
-      }
-    };
+	useEffect(() => {
+		let mounted = true;
 
-    initEsbuild();
+		const initEsbuild = async () => {
+			try {
+				await initializeEsbuild();
 
-    return () => {
-      if (initRef.current) {
-        esbuild.stop?.();
-      }
-    };
-  }, [state.esbuildReady]);
+				if (!mounted) return;
 
-  const createVirtualFilePlugin = (files: Record<string, string>) => ({
-    name: 'virtual-fs',
-    setup(build: esbuild.PluginBuild) {
-      build.onResolve({ filter: /.*/ }, args => {
-        if (args.path.startsWith('./') || args.path.startsWith('../') || args.path.startsWith('src/')) {
-          const resolvedPath = new URL(args.path, `file://${args.resolveDir}/`).pathname.slice(1);
-          return { path: resolvedPath, namespace: 'virtual' };
-        }
-        return { path: args.path, external: true };
-      });
+				setState(prev => ({
+					...prev,
+					esbuildReady: true,
+					consoleMessages: [...prev.consoleMessages, {
+						id: generateUniqueId(),
+						message: '🛠️ esbuild initialized',
+					}],
+				}));
+			} catch (err) {
+				if (!mounted) return;
 
-      build.onLoad({ filter: /.*/, namespace: 'virtual' }, args => {
-        const path = args.path.startsWith('src/') ? args.path : `src/${args.path}`;
-        const fileContent = files[path];
-        if (!fileContent) return;
+				console.error('Esbuild init failed:', err);
+				setState(prev => ({
+					...prev,
+					consoleMessages: [...prev.consoleMessages, {
+						id: generateUniqueId(),
+						message: `❌ Esbuild initialization failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
+					}],
+				}));
+			}
+		};
 
-        return {
-          contents: fileContent,
-          loader: path.endsWith('.ts') || path.endsWith('.tsx') ? 'tsx' : 'js',
-        };
-      });
-    },
-  });
+		initEsbuild();
 
-  const compileProject = async (entry: string, allFiles: Record<string, string>) => {
-    if (!state.esbuildReady) throw new Error('esbuild is not ready');
+		return () => {
+			mounted = false;
+		};
+	}, []);
 
-    const result = await esbuild.build({
-      entryPoints: [entry],
-      bundle: true,
-      write: false,
-      plugins: [createVirtualFilePlugin(allFiles)],
-      format: 'esm',
-      jsx: 'automatic',
-      target: 'esnext',
-      platform: 'browser',
-      sourcemap: false,
-    });
+	const createVirtualFilePlugin = (files: Record<string, string>) => ({
+		name: 'virtual-fs',
+		setup(build: esbuild.PluginBuild) {
+			build.onResolve({ filter: /.*/ }, args => {
+				if (
+					args.path.startsWith('./') ||
+		args.path.startsWith('../') ||
+		args.path.startsWith('src/')
+				) {
+					let resolvedPath = new URL(args.path, `file://${args.resolveDir}/`).pathname.slice(1);
 
-    return result.outputFiles[0].text;
-  };
+					if (!/\.\w+$/.test(resolvedPath)) {
+						if (files[`${resolvedPath}.tsx`]) resolvedPath += '.tsx';
+						else if (files[`${resolvedPath}.ts`]) resolvedPath += '.ts';
+						else if (files[`${resolvedPath}.js`]) resolvedPath += '.js';
+						else if (files[`${resolvedPath}.jsx`]) resolvedPath += '.jsx';
+					}
 
-  const formatCode = async (code: string) => {
-    try {
-      const formattedCode = await prettier.format(code, {
-        parser: 'babel',
-        plugins: [parserBabel, '@trivago/prettier-plugin-sort-imports'],
-        semi: true,
-        singleQuote: true,
-        trailingComma: 'es5',
-        printWidth: 100,
-        tabWidth: 2,
-        useTabs: true,
-        bracketSpacing: true,
-        jsxBracketSameLine: false,
-        arrowParens: 'avoid',
-        endOfLine: 'auto',
-        importOrder: ['^react', '^@react-navigation', '^react-native', '^[./]'],
-        importOrderSeparation: true,
-        importOrderSortSpecifiers: true,
-      });
-      return formattedCode;
-    } catch (error) {
-      console.error('Error formatting code:', error);
-      return code;
-    }
-  };
+					return { path: resolvedPath, namespace: 'virtual' };
+				}
 
-  const handleGenerateWithAI = async () => {
-    if (!state.prompt.trim() || state.isGenerating) return;
+				// Externals (libs tierces)
+				return { path: args.path, external: true };
+			});
 
-    if (!import.meta.env.VITE_OPENAI_API_KEY) {
-      const id = `error-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      setState(prev => ({
-        ...prev,
-        consoleMessages: [...prev.consoleMessages, {
-          id,
-          message: '❌ La clé API OpenAI n\'est pas configurée. Veuillez ajouter VITE_OPENAI_API_KEY dans votre fichier .env',
-        }],
-      }));
-      return;
-    }
+			build.onLoad({ filter: /.*/, namespace: 'virtual' }, args => {
+				const path = args.path.startsWith('src/') ? args.path : `src/${args.path}`;
+				const fileContent = files[path];
+				if (!fileContent) return;
 
-    setState(prev => ({ ...prev, isGenerating: true }));
-    const id = `gen-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    setState(prev => ({
-      ...prev,
-      consoleMessages: [...prev.consoleMessages, {
-        id,
-        message: `🤖 Generating code with AI... (${new Date().toLocaleTimeString()})`,
-      }],
-    }));
+				return {
+					contents: fileContent,
+					loader: path.endsWith('.ts') || path.endsWith('.tsx') ? 'tsx' : 'js',
+				};
+			});
+		},
+	});
 
-    try {
-      const response = await generateCodeWithOpenAI(state.prompt);
-      let files: Record<string, string>;
+	const compileProject = async (entry: string, allFiles: Record<string, string>) => {
+		if (!state.esbuildReady) {
+			await initializeEsbuild();
+			setState(prev => ({ ...prev, esbuildReady: true }));
+		}
+		console.log('🔍 All Files :', allFiles);
+		const preProcessedFiles = transformImports(allFiles);
 
-      if (typeof response === 'object' && response !== null) {
-        files = response as Record<string, string>;
-      } else if (typeof response === 'string') {
-        const cleanedResponse = response
-          .split('')
-          .filter(char => {
-            const code = char.charCodeAt(0);
-            return code >= 32 && code !== 127;
-          })
-          .join('')
-          .replace(/\\n/g, '\n')
-          .replace(/\\r/g, '\r')
-          .replace(/\\t/g, '\t')
-          .replace(/\\"/g, '"')
-          .replace(/\\\\/g, '\\')
-          .replace(/\n\s*\n/g, '\n')
-          .trim();
+		try {
+			return await esbuild.build({
+				entryPoints: [entry],
+				bundle: true,
+				write: false,
+				plugins: [createVirtualFilePlugin(preProcessedFiles)],
+				jsx: 'transform',
+				jsxFactory: 'React.createElement',
+				jsxFragment: 'React.Fragment',
+				target: 'esnext',
+				platform: 'browser',
+				format: 'esm',
+				// external: ['react', 'react-dom', 'react-native-web', 'react/jsx-runtime'],
+				// banner: {
+				// 	js: `
+				// 		const React = window.React;
+				// 		const ReactDOM = window.ReactDOM;
+				// 		const ReactNativeWeb = window.ReactNativeWeb;
+				// 	`,
+				// },
+				loader: {
+					'.js': 'jsx',
+					'.jsx': 'jsx',
+					'.ts': 'tsx',
+					'.tsx': 'tsx',
+				},
+				define: {
+					'process.env.NODE_ENV': '"development"',
+				},
+			});
+		} catch (error) {
+			console.error('Compilation error:', error);
+			throw error;
+		}
+	};
 
-        try {
-          const parsedResponse = JSON.parse(cleanedResponse);
-          if (typeof parsedResponse === 'object' && parsedResponse !== null) {
-            files = parsedResponse;
-          } else {
-            throw new Error('Parsed response is not an object');
-          }
-        } catch (parseError) {
-          const fileEntries = cleanedResponse.match(/"([^"]+)":\s*"([^"]*)(?<!\\)"/g);
-          if (fileEntries) {
-            files = {};
-            for (const entry of fileEntries) {
-              const match = entry.match(/"([^"]+)":\s*"([^"]*)(?<!\\)"/);
-              if (match) {
-                const [_, filename, content] = match;
-                const cleanedContent = content
-                  .replace(/\\n/g, '\n')
-                  .replace(/\\r/g, '\r')
-                  .replace(/\\t/g, '\t')
-                  .replace(/\\"/g, '"')
-                  .replace(/\\\\/g, '\\');
-                files[filename] = cleanedContent;
-              }
-            }
-          } else {
-            files = { 'App.tsx': cleanedResponse };
-          }
-        }
-      } else {
-        throw new TypeError('Invalid response format');
-      }
+	const formatCode = async (code: string) => {
+		try {
+			const formattedCode = await window.prettier.format(code, {
+				parser: 'babel',
+				plugins: window.prettierPlugins,
+				format: 'iife',
+				globalName: 'AppBundle',
+				semi: true,
+				singleQuote: true,
+				trailingComma: 'es5',
+				printWidth: 100,
+				tabWidth: 2,
+				useTabs: true,
+				bracketSpacing: true,
+				jsxBracketSameLine: false,
+				arrowParens: 'avoid',
+				endOfLine: 'auto',
+			});
 
-      const unformattedFiles: Record<string, string> = {};
-      for (const [key, value] of Object.entries(files)) {
-        const filePath = key.startsWith('src/') ? key : `src/${key}`;
-        const formattedCode = await formatCode(value);
-        unformattedFiles[filePath] = formattedCode;
-      }
+			return formattedCode;
+		} catch (error) {
+			console.error('Error formatting code:', error);
+			return code;
+		}
+	};
 
-      setState(prev => ({
-        ...prev,
-        files: { ...prev.files, ...unformattedFiles },
-        selectedFile: Object.keys(unformattedFiles)[0] || prev.selectedFile,
-        prompt: '',
-        consoleMessages: [...prev.consoleMessages, {
-          id: `success-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          message: `✨ Generated ${Object.keys(unformattedFiles).length} files at ${new Date().toLocaleTimeString()}`,
-        }],
-      }));
-    } catch (error) {
-      console.error('Error generating code:', error);
-      setState(prev => ({
-        ...prev,
-        consoleMessages: [...prev.consoleMessages, {
-          id: `error-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          message: `❌ ${error instanceof Error ? error.message : 'Failed to generate code'}`,
-        }],
-      }));
-    } finally {
-      setState(prev => ({ ...prev, isGenerating: false }));
-    }
-  };
+	function dedupeImports(code: string): string {
+		const seen = new Set<string>();
 
-  return {
-    state,
-    setState,
-    compileProject,
-    handleGenerateWithAI,
-  };
-}; 
+		return code
+			.split('\n')
+			.filter(line => {
+				const match = line.match(/^import\s.+?from\s+['"](.+?)['"]/);
+				if (!match) return true;
+				if (seen.has(match[0])) return false;
+				seen.add(match[0]);
+				return true;
+			})
+			.join('\n');
+	}
+
+	const handleGenerateWithAI = async () => {
+		if (!state.prompt.trim() || state.isGenerating) return;
+
+		if (!import.meta.env.VITE_OPENAI_API_KEY) {
+			const id = `error-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+			setState(prev => ({
+				...prev,
+				consoleMessages: [...prev.consoleMessages, {
+					id,
+					message: '❌ La clé API OpenAI n\'est pas configurée. Veuillez ajouter VITE_OPENAI_API_KEY dans votre fichier .env',
+				}],
+			}));
+			return;
+		}
+
+		setState(prev => ({ ...prev, isGenerating: true }));
+
+		const id = `gen-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+		setState(prev => ({
+			...prev,
+			consoleMessages: [...prev.consoleMessages, {
+				id,
+				message: `🤖 Generating code with AI... (${new Date().toLocaleTimeString()})`,
+			}],
+		}));
+
+		try {
+			const response = await generateCodeWithOpenAI(state.prompt);
+			let files: Record<string, string>;
+
+			if (typeof response === 'object' && response !== null) {
+				files = response as Record<string, string>;
+			} else if (typeof response === 'string') {
+				const cleanedResponse = response
+					.split('')
+					.filter(char => {
+						const code = char.charCodeAt(0);
+						return code >= 32 && code !== 127;
+					})
+					.join('')
+					.replace(/\\n/g, '\n')
+					.replace(/\\r/g, '\r')
+					.replace(/\\t/g, '\t')
+					.replace(/\\"/g, '"')
+					.replace(/\\\\/g, '\\')
+					.replace(/\n\s*\n/g, '\n')
+					.trim();
+
+				try {
+					const parsedResponse = JSON.parse(cleanedResponse);
+					if (typeof parsedResponse === 'object' && parsedResponse !== null) {
+						files = parsedResponse;
+					} else {
+						throw new Error('Parsed response is not an object');
+					}
+				} catch (parseError) {
+					const fileEntries = cleanedResponse.match(/"([^"]+)":\s*"([^"]*)(?<!\\)"/g);
+					if (fileEntries) {
+						files = {};
+						for (const entry of fileEntries) {
+							const match = entry.match(/"([^"]+)":\s*"([^"]*)(?<!\\)"/);
+							if (match) {
+								const [_, filename, content] = match;
+								const cleanedContent = content
+									.replace(/\\n/g, '\n')
+									.replace(/\\r/g, '\r')
+									.replace(/\\t/g, '\t')
+									.replace(/\\"/g, '"')
+									.replace(/\\\\/g, '\\');
+								files[filename] = cleanedContent;
+							}
+						}
+					} else {
+						files = { 'App.tsx': cleanedResponse };
+					}
+				}
+			} else {
+				throw new TypeError('Invalid response format');
+			}
+
+			const unformattedFiles: Record<string, string> = {};
+			for (const [key, value] of Object.entries(files)) {
+				const filePath = key.startsWith('src/') ? key : `src/${key}`;
+				const formattedCode = await formatCode(value);
+				const dedupedCode = dedupeImports(formattedCode);
+				unformattedFiles[filePath] = dedupedCode;
+			}
+
+			setState(prev => ({
+				...prev,
+				files: { ...prev.files, ...unformattedFiles },
+				selectedFile: Object.keys(unformattedFiles)[0] || prev.selectedFile,
+				prompt: '',
+				consoleMessages: [...prev.consoleMessages, {
+					id: `success-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+					message: `✨ Generated ${Object.keys(unformattedFiles).length} files at ${new Date().toLocaleTimeString()}`,
+				}],
+			}));
+		} catch (error) {
+			console.error('Error generating code:', error);
+			setState(prev => ({
+				...prev,
+				consoleMessages: [...prev.consoleMessages, {
+					id: `error-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+					message: `❌ ${error instanceof Error ? error.message : 'Failed to generate code'}`,
+				}],
+			}));
+		} finally {
+			setState(prev => ({ ...prev, isGenerating: false }));
+		}
+	};
+
+	return {
+		state,
+		setState,
+		compileProject,
+		dedupeImports,
+		handleGenerateWithAI,
+	};
+}

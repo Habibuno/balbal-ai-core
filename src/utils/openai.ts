@@ -1,33 +1,10 @@
 import { AI_CONFIG } from '../config/ai';
-
-const SYSTEM_PROMPT = `You are an expert React developer specializing in mobile applications. When asked to create an app, you must ALWAYS respond with a JavaScript object where:
-- Each key is a file path (e.g., "App.tsx", "screens/HomeScreen.tsx")
-- Each value is the complete file content as a string
-- Use TypeScript and modern React practices
-- Split the UI into reusable components
-- Use Tailwind CSS for styling
-- Add proper JSDoc comments
-- Handle errors and loading states
-- Make the UI mobile-responsive with proper touch targets
-- Include proper navigation between screens
-- Handle mobile-specific features appropriately
-
-Example response format:
-{
-  "App.tsx": "import { NavigationContainer } from '@react-navigation/native';\n\nexport default function App() { return <NavigationContainer>...</NavigationContainer> }",
-  "screens/HomeScreen.tsx": "export function HomeScreen() { return <View>...</View> }"
-}`;
-
-export type GenerateOptions = {
-	model?: string;
-	temperature?: number;
-	maxTokens?: number;
-	systemPrompt?: string;
-};
+import { SYSTEM_PROMPT_MOBILE } from '../constants/prompt';
+import type { OpenAiGenerateOptions } from '../types/openai';
 
 export async function generateCodeWithOpenAI(
 	prompt: string,
-	options: Partial<GenerateOptions> = {}
+	options: Partial<OpenAiGenerateOptions> = {}
 ): Promise<string> {
 	try {
 		const enhancedPrompt = `
@@ -112,7 +89,7 @@ export async function generateCodeWithOpenAI(
 				messages: [
 					{
 						role: 'system',
-						content: options.systemPrompt || SYSTEM_PROMPT,
+						content: options.systemPrompt || SYSTEM_PROMPT_MOBILE,
 					},
 					{
 						role: 'user',

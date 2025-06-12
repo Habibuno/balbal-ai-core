@@ -1,5 +1,5 @@
 import { Code, CreditCard, Rocket, Smartphone, Sparkles, Target, Zap } from 'lucide-react';
-import React from 'react';
+import type React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
@@ -50,7 +50,7 @@ export const Landing: React.FC = () => {
 
 			{/* Hero Section */}
 			<header className="relative mt-16 overflow-hidden py-24">
-				<div className="cyber-gradient absolute inset-0 opacity-10"></div>
+				<div className="cyber-gradient absolute inset-0 opacity-10" />
 				<div className="container mx-auto px-4">
 					<div className="mx-auto max-w-4xl text-center">
 						<h1 className="neon-glow mb-6 text-5xl font-bold md:text-7xl">{t('hero.title')}</h1>
@@ -82,8 +82,8 @@ export const Landing: React.FC = () => {
 								title: t('features.deploy.title'),
 								description: t('features.deploy.description'),
 							},
-						].map((feature, index) => (
-							<div key={index} className="neon-border card-hover rounded-lg bg-black/50 p-6">
+						].map((feature) => (
+							<div key={feature.title} className="neon-border card-hover rounded-lg bg-black/50 p-6">
 								<div className="mb-4">{feature.icon}</div>
 								<h3 className="mb-2 text-xl font-bold">{feature.title}</h3>
 								<p className="text-gray-400">{feature.description}</p>
@@ -125,9 +125,9 @@ export const Landing: React.FC = () => {
 								description: t('howItWorks.steps.deploy.description'),
 								icon: <Rocket className="h-6 w-6" />,
 							},
-						].map((step, index) => (
+						].map((step) => (
 							<div
-								key={index}
+								key={step.step}
 								className="card-hover relative rounded-lg border border-cyan-400/20 bg-black/30 p-6"
 							>
 								<div className="absolute -left-4 -top-4 flex h-8 w-8 items-center justify-center rounded-full bg-cyan-400 font-bold text-black">
