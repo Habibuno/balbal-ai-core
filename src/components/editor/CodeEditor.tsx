@@ -1,47 +1,72 @@
 import { javascript } from '@codemirror/lang-javascript';
 import { oneDark } from '@codemirror/theme-one-dark';
 import CodeMirror from '@uiw/react-codemirror';
-import React from 'react';
+import { CheckCheck, Copy, Play } from 'lucide-react';
+import type { KeyboardEvent } from 'react';
+import { useState } from 'react';
+import { Button } from '../ui/Button';
 
-type Props = {
+interface CodeEditorProps {
 	value: string;
 	onChange: (value: string) => void;
-};
+	onExecute: () => void;
+	selectedFile: string;
+}
 
-export const CodeEditor: React.FC<Props> = ({ value, onChange }) => {
+export const CodeEditor: React.FC<CodeEditorProps> = ({
+	value,
+	onChange,
+	onExecute,
+	selectedFile,
+}) => {
+	const [copied, setCopied] = useState(false);
+
+	const handleCopy = async () => {
+		try {
+			await navigator.clipboard.writeText(value);
+			setCopied(true);
+			setTimeout(() => setCopied(false), 2000);
+		} catch (err) {
+			console.error('Failed to copy:', err);
+		}
+	};
+
 	return (
-		<CodeMirror
-			value={value}
-			height="100%"
-			theme={oneDark}
-			extensions={[javascript({ jsx: true })]}
-			onChange={onChange}
-			basicSetup={{
-				lineNumbers: true,
-				highlightActiveLineGutter: true,
-				highlightSpecialChars: true,
-				history: true,
-				foldGutter: true,
-				drawSelection: true,
-				dropCursor: true,
-				allowMultipleSelections: true,
-				indentOnInput: true,
-				syntaxHighlighting: true,
-				bracketMatching: true,
-				closeBrackets: true,
-				autocompletion: true,
-				rectangularSelection: true,
-				crosshairCursor: true,
-				highlightActiveLine: true,
-				highlightSelectionMatches: true,
-				closeBracketsKeymap: true,
-				defaultKeymap: true,
-				searchKeymap: true,
-				historyKeymap: true,
-				foldKeymap: true,
-				completionKeymap: true,
-				lintKeymap: true,
-			}}
-		/>
+		<div className="h-full p-4">
+			<div className="mb-4 flex justify-end gap-2">
+				<Button
+					variant="outline"
+					size="sm"
+					onClick={handleCopy}
+					icon={
+						copied ? (
+							<CheckCheck className="h-4 w-4 text-green-500" />
+						) : (
+							<Copy className="h-4 w-4" />
+						)
+					}
+				>
+					{copied ? 'Copié !' : 'Copier'}
+				</Button>
+				<Button size="sm" onClick={onExecute} icon={<Play className="h-4 w-4" />}>
+					Exécuter
+				</Button>
+			</div>
+			<div className="h-[calc(100%-3rem)] overflow-hidden rounded-xl border border-gray-800">
+				<CodeMirror
+					value={value}
+					height="100%"
+					theme={oneDark}
+					extensions={[javascript({ jsx: true, typescript: selectedFile.endsWith('.tsx') || selectedFile.endsWith('.ts') })]}
+					onChange={onChange}
+					onKeyDown={(event: KeyboardEvent<HTMLDivElement>) => {
+						if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+							event.preventDefault();
+							onExecute();
+						}
+					}}
+				/>
+			</div>
+		</div>
 	);
 };
