@@ -1,7 +1,7 @@
 import { FolderTree, Loader2, Wand2 } from 'lucide-react';
 
 import { Button } from '../ui/Button';
-import type { EditorState } from './useEditor';
+import type { EditorState } from '../../types/editor';
 
 type SidebarProps = {
 	state: EditorState;

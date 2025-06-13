@@ -1,15 +1,17 @@
 import * as esbuild from 'esbuild-wasm';
+import { default as parserBabel } from 'prettier/parser-babel';
+import parserTs from 'prettier/parser-typescript';
 import prettier from 'prettier/standalone';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
-import type { EditorState } from '../../types/editor';
-import { generateCodeWithOpenAI } from '../../utils/openai';
+import type { EditorState } from '../types/editor';
+import { generateCodeWithOpenAI } from '../utils/openai';
 
 let esbuildInitPromise: Promise<void> | null = null;
 let isInitializing = false;
 const generateUniqueId = () => `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
-async function initializeEsbuild() {
+async function initializeEsbuild(): Promise<void> {
 	if (esbuildInitPromise) return esbuildInitPromise;
 	if (isInitializing) {
 		return new Promise((resolve) => {
@@ -89,7 +91,6 @@ const styles = StyleSheet.create({
 		prompt: '',
 		esbuildReady: false,
 	});
-	const initRef = useRef(false);
 
 	useEffect(() => {
 		let mounted = true;
@@ -100,7 +101,7 @@ const styles = StyleSheet.create({
 
 				if (!mounted) return;
 
-				setState(prev => ({
+				setState((prev) => ({
 					...prev,
 					esbuildReady: true,
 					consoleMessages: [...prev.consoleMessages, {
@@ -112,7 +113,7 @@ const styles = StyleSheet.create({
 				if (!mounted) return;
 
 				console.error('Esbuild init failed:', err);
-				setState(prev => ({
+				setState((prev) => ({
 					...prev,
 					consoleMessages: [...prev.consoleMessages, {
 						id: generateUniqueId(),
@@ -132,11 +133,11 @@ const styles = StyleSheet.create({
 	const createVirtualFilePlugin = (files: Record<string, string>) => ({
 		name: 'virtual-fs',
 		setup(build: esbuild.PluginBuild) {
-			build.onResolve({ filter: /.*/ }, args => {
+			build.onResolve({ filter: /.*/ }, (args) => {
 				if (
 					args.path.startsWith('./') ||
-		args.path.startsWith('../') ||
-		args.path.startsWith('src/')
+					args.path.startsWith('../') ||
+					args.path.startsWith('src/')
 				) {
 					let resolvedPath = new URL(args.path, `file://${args.resolveDir}/`).pathname.slice(1);
 
@@ -154,7 +155,7 @@ const styles = StyleSheet.create({
 				return { path: args.path, external: true };
 			});
 
-			build.onLoad({ filter: /.*/, namespace: 'virtual' }, args => {
+			build.onLoad({ filter: /.*/, namespace: 'virtual' }, (args) => {
 				const path = args.path.startsWith('src/') ? args.path : `src/${args.path}`;
 				const fileContent = files[path];
 				if (!fileContent) return;
@@ -170,7 +171,7 @@ const styles = StyleSheet.create({
 	const compileProject = async (entry: string, allFiles: Record<string, string>) => {
 		if (!state.esbuildReady) {
 			await initializeEsbuild();
-			setState(prev => ({ ...prev, esbuildReady: true }));
+			setState((prev) => ({ ...prev, esbuildReady: true }));
 		}
 
 		try {
@@ -187,8 +188,6 @@ const styles = StyleSheet.create({
 				format: 'iife',
 				globalName: 'AppBundle',
 				define: { 'process.env.NODE_ENV': '"development"' },
-				// ⬇️ on enlève complètement external
-				// external: [...],
 				loader: { '.js': 'jsx', '.jsx': 'jsx', '.ts': 'tsx', '.tsx': 'tsx' },
 			});
 		} catch (error) {
@@ -197,34 +196,12 @@ const styles = StyleSheet.create({
 		}
 	};
 
-	const formatCode = async (code: string) => {
-		try {
-			const formattedCode = await prettier.format(code, {
-				semi: true,
-				singleQuote: true,
-				trailingComma: 'es5',
-				printWidth: 100,
-				tabWidth: 2,
-				useTabs: true,
-				bracketSpacing: true,
-				jsxBracketSameLine: false,
-				arrowParens: 'avoid',
-				endOfLine: 'auto',
-			});
-
-			return formattedCode;
-		} catch (error) {
-			console.error('Error formatting code:', error);
-			return code;
-		}
-	};
-
 	function dedupeImports(code: string): string {
 		const seen = new Set<string>();
 
 		return code
 			.split('\n')
-			.filter(line => {
+			.filter((line) => {
 				const match = line.match(/^import\s.+?from\s+['"](.+?)['"]/);
 				if (!match) return true;
 				if (seen.has(match[0])) return false;
@@ -234,13 +211,13 @@ const styles = StyleSheet.create({
 			.join('\n');
 	}
 
-	const handleGenerateWithAI = async () => {
+	const handleGenerateWithAI = async (): Promise<void> => {
 		if (!state.prompt.trim() || state.isGenerating) return;
 
 		if (!import.meta.env.VITE_OPENAI_API_KEY) {
 			const id = `error-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-			setState(prev => ({
+			setState((prev) => ({
 				...prev,
 				consoleMessages: [...prev.consoleMessages, {
 					id,
@@ -250,11 +227,11 @@ const styles = StyleSheet.create({
 			return;
 		}
 
-		setState(prev => ({ ...prev, isGenerating: true }));
+		setState((prev) => ({ ...prev, isGenerating: true }));
 
 		const id = `gen-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-		setState(prev => ({
+		setState((prev) => ({
 			...prev,
 			consoleMessages: [...prev.consoleMessages, {
 				id,
@@ -271,7 +248,7 @@ const styles = StyleSheet.create({
 			} else if (typeof response === 'string') {
 				const cleanedResponse = response
 					.split('')
-					.filter(char => {
+					.filter((char) => {
 						const code = char.charCodeAt(0);
 						return code >= 32 && code !== 127;
 					})
@@ -291,14 +268,14 @@ const styles = StyleSheet.create({
 					} else {
 						throw new Error('Parsed response is not an object');
 					}
-				} catch (parseError) {
+				} catch {
 					const fileEntries = cleanedResponse.match(/"([^"]+)":\s*"([^"]*)(?<!\\)"/g);
 					if (fileEntries) {
 						files = {};
 						for (const entry of fileEntries) {
 							const match = entry.match(/"([^"]+)":\s*"([^"]*)(?<!\\)"/);
 							if (match) {
-								const [_, filename, content] = match;
+								const [, filename, content] = match;
 								const cleanedContent = content
 									.replace(/\\n/g, '\n')
 									.replace(/\\r/g, '\r')
@@ -319,12 +296,30 @@ const styles = StyleSheet.create({
 			const unformattedFiles: Record<string, string> = {};
 			for (const [key, value] of Object.entries(files)) {
 				const filePath = key.startsWith('src/') ? key : `src/${key}`;
-				const formattedCode = await formatCode(value);
-				const dedupedCode = dedupeImports(formattedCode);
-				unformattedFiles[filePath] = dedupedCode;
+				const dedupedCode = dedupeImports(value);
+
+				try {
+					const ext = filePath.split('.').pop();
+					const parser = ext === 'ts' || ext === 'tsx' ? 'typescript' : 'babel';
+
+					const formatted = prettier.format(dedupedCode, {
+						parser,
+						plugins: [parserBabel, parserTs],
+						semi: true,
+						singleQuote: true,
+						trailingComma: 'es5',
+						tabWidth: 2,
+						printWidth: 80,
+					});
+
+					unformattedFiles[filePath] = await formatted;
+				} catch (error) {
+					console.error('Error formatting code:', error);
+					unformattedFiles[filePath] = dedupedCode;
+				}
 			}
 
-			setState(prev => ({
+			setState((prev) => ({
 				...prev,
 				files: { ...prev.files, ...unformattedFiles },
 				selectedFile: Object.keys(unformattedFiles)[0] || prev.selectedFile,
@@ -336,7 +331,7 @@ const styles = StyleSheet.create({
 			}));
 		} catch (error) {
 			console.error('Error generating code:', error);
-			setState(prev => ({
+			setState((prev) => ({
 				...prev,
 				consoleMessages: [...prev.consoleMessages, {
 					id: `error-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -344,7 +339,7 @@ const styles = StyleSheet.create({
 				}],
 			}));
 		} finally {
-			setState(prev => ({ ...prev, isGenerating: false }));
+			setState((prev) => ({ ...prev, isGenerating: false }));
 		}
 	};
 

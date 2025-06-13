@@ -7,6 +7,37 @@ type PreviewProps = {
 	files: Record<string, string>;
 };
 
+type ReactComponentProps = {
+	children?: React.ReactNode;
+	[key: string]: unknown;
+};
+
+type ReactNavigationType = {
+	NavigationContainer: React.ComponentType<ReactComponentProps>;
+	createNativeStackNavigator: () => {
+		Navigator: React.ComponentType<ReactComponentProps>;
+		Screen: React.ComponentType<ReactComponentProps>;
+	};
+};
+
+type ReactNavigationBottomTabsType = {
+	createBottomTabNavigator: () => {
+		Navigator: React.ComponentType<ReactComponentProps>;
+		Screen: React.ComponentType<ReactComponentProps>;
+	};
+};
+
+type PreviewScope = {
+	React: typeof React;
+	ReactDOM: typeof ReactDOM;
+	ReactNavigationNative: ReactNavigationType;
+	ReactNavigationNativeStack: ReactNavigationType;
+	ReactNavigationBottomTabs: ReactNavigationBottomTabsType;
+	render: (el: React.ReactElement) => HTMLElement;
+	module: { exports: Record<string, unknown> };
+	exports: Record<string, unknown>;
+} & typeof RNW;
+
 export function Preview({ files }: PreviewProps) {
 	function render(el: React.ReactElement) {
 		const mount = document.createElement('div');
@@ -24,13 +55,13 @@ export function Preview({ files }: PreviewProps) {
 		)
 		.join('\n');
 
-	const scope: any = {
+	const scope: PreviewScope = {
 		React,
 		ReactDOM,
 		...RNW,
-		ReactNavigationNative: (window as any).ReactNavigationNative,
-		ReactNavigationNativeStack: (window as any).ReactNavigationNativeStack,
-		ReactNavigationBottomTabs: (window as any).ReactNavigationBottomTabs,
+		ReactNavigationNative: (window as unknown as { ReactNavigationNative: ReactNavigationType }).ReactNavigationNative,
+		ReactNavigationNativeStack: (window as unknown as { ReactNavigationNativeStack: ReactNavigationType }).ReactNavigationNativeStack,
+		ReactNavigationBottomTabs: (window as unknown as { ReactNavigationBottomTabs: ReactNavigationBottomTabsType }).ReactNavigationBottomTabs,
 		render,
 		module: { exports: {} },
 		exports: {},

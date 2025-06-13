@@ -1,0 +1,73 @@
+---
+services:
+  grafana:
+    image: grafana/grafana-oss:9.4.3
+    container_name: grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:?error}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?error}
+      GF_PATHS_PROVISIONING: /etc/grafana/provisioning
+    ports:
+      - '${GRAFANA_PORT}:3000'
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    networks:
+      - network_backend
+      - network_monitoring
+
+  loki:
+    image: grafana/loki:2.8.0
+    container_name: loki
+    ports:
+      - '${LOKI_PORT}:${LOKI_PORT}'
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - network_backend
+      - network_monitoring
+
+  promtail:
+    image: grafana/promtail:2.8.0
+    container_name: promtail
+    volumes:
+      - /var/log:/var/log
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - network_backend
+      - network_monitoring
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - '${PROMETHEUS_PORT}:${PROMETHEUS_PORT}'
+    volumes:
+      - ./.docker/prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml
+    networks:
+      - network_backend
+      - network_monitoring
+
+  postgres_exporter:
+    image: wrouesnel/postgres_exporter
+    container_name: postgres-exporter
+    environment:
+      DATA_SOURCE_NAME: ${DATABASE_URL:?error}
+    ports:
+      - '9187:9187'
+    networks:
+      - network_monitoring
+
+networks:
+  network_backend:
+    external: true
+    name: scca_network_backend
+  network_memphis:
+    external: true
+    name: scca_network_memphis
+  network_monitoring:
+    external: true
+    name: scca_network_monitoring
+
+volumes:
+  grafana_data:

@@ -1,13 +1,14 @@
 import { Tab } from '@headlessui/react';
-import { ArrowLeft, Code2, Eye, Play, Settings } from 'lucide-react';
+import { ArrowLeft, Code2, Eye, Settings } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
+import { useEditor } from '../hooks/useEditor';
 import { CodeEditor } from './editor/CodeEditor';
 import { Preview } from './editor/Preview';
 import { Sidebar } from './editor/Sidebar';
 import { Terminal } from './editor/Terminal';
-import { useEditor } from './editor/useEditor';
 import { Button } from './ui/Button';
 
 // Helper to generate unique IDs
@@ -15,12 +16,11 @@ const generateUniqueId = () => `${Date.now()}-${Math.random().toString(36).subst
 
 export const Create: React.FC = () => {
 	const navigate = useNavigate();
+	const { t } = useTranslation();
 	const { state, setState, compileProject, handleGenerateWithAI } = useEditor();
 	const [tabIndex, setTabIndex] = useState(0);
 
 	const handleExecute = async () => {
-		console.log('🔍 State :', state);
-
 		try {
 			setState(prev => ({
 				...prev,
@@ -45,7 +45,6 @@ export const Create: React.FC = () => {
 				/^import\s+\{[^}]+\}\s+from\s+['"]react-native-web['"];?$/gm,
 				''
 			);
-			console.log('imports RNW dans bundle ?', jsBundle.includes('react-native-web'));
 
 			const html = `
 <!DOCTYPE html>
@@ -129,10 +128,18 @@ export const Create: React.FC = () => {
 						icon={<ArrowLeft className="h-5 w-5" />}
 						size="sm"
 					>
-						Retour
+						{t('navigation.backToHome')}
 					</Button>
 					<h1 className="text-xl font-semibold text-white">BalBal.io Editor</h1>
 				</div>
+				<Button
+					variant="outline"
+					onClick={() => navigate('/settings')}
+					icon={<Settings className="h-5 w-5" />}
+					size="sm"
+				>
+					Settings
+				</Button>
 			</div>
 
 			{/* Main Content */}

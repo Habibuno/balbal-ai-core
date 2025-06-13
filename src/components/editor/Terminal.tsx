@@ -1,7 +1,7 @@
 import { Terminal as TerminalIcon } from 'lucide-react';
 import type React from 'react';
 
-import type { ConsoleMessage } from './useEditor';
+import type { ConsoleMessage } from '../../types/editor';
 
 type TerminalProps = {
 	messages: ConsoleMessage[];

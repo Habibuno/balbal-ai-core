@@ -1,0 +1,130 @@
+---
+services:
+  redis:
+    image: redis:alpine
+    container_name: redis
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    environment:
+      REDIS_HOST: ${REDIS_HOST:?error}
+      REDIS_PORT: ${REDIS_PORT:?error}
+    ports:
+      - '${REDIS_PORT}:${REDIS_PORT}'
+    networks:
+      - network_backend
+
+  vault-server:
+    image: hashicorp/vault:latest
+    container_name: vault-server
+    cap_add:
+      - IPC_LOCK
+    command: server -dev
+    healthcheck:
+      test: ['CMD', 'vault', 'status']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_TOKEN:?error}
+      VAULT_ADDR: ${VAULT_ADDR:?error}
+    ports:
+      - '${VAULT_PORT}:${VAULT_PORT}'
+    volumes:
+      - vault_data:/vault/data
+    networks:
+      - network_backend
+
+  vault-client:
+    image: alpine:latest
+    container_name: vault-client
+    command: sh -c "apk add --no-cache curl jq && tail -f /dev/null"
+    environment:
+      VAULT_ADDR: ${VAULT_ADDR:?error}
+    networks:
+      - network_backend
+
+  # --- MEMPHIS ------------------------------------------------------------------------------------------------------ #
+  memphis-metadata:
+    image: memphisos/memphis-metadata:docker-15.2.0-debian-11-r27
+    container_name: memphis-metadata
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U memphis -p 5005']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    environment:
+      POSTGRESQL_USERNAME: ${MEMPHIS_USERNAME:?error}
+      POSTGRESQL_PASSWORD: ${MEMPHIS_PASSWORD:?error}
+      POSTGRESQL_DATABASE: ${MEMPHIS_DATABASE:?error}
+      POSTGRESQL_PORT_NUMBER: ${MEMPHIS_METADATA_PORT:?error}
+    ports:
+      - '5005:5005'
+    networks:
+      - network_memphis
+
+  memphis:
+    image: 'memphisos/memphis:latest'
+    container_name: memphis
+    depends_on:
+      memphis-metadata:
+        condition: service_healthy
+    healthcheck:
+      test: 'wget http://127.0.0.1:9000 --spider || exit 1'
+      interval: 10s
+      retries: 30
+      start_period: 5s
+    restart: on-failure
+    pull_policy: always
+    environment:
+      ROOT_PASSWORD: ${MEMPHIS_ROOT_PASSWORD:?error}
+      DOCKER_ENV: ${DOCKER_ENV:?error}
+      USER_PASS_BASED_AUTH: ${MEMPHIS_USER_PASS_BASED_AUTH:?error}
+      CONNECTION_TOKEN: ${MEMPHIS_CONNECTION_TOKEN:?error}
+      METADATA_DB_HOST: ${MEMPHIS_METADATA_DB_HOST:?error}
+      METADATA_DB_USER: ${MEMPHIS_USERNAME:?error}
+      METADATA_DB_PASSWORD: ${MEMPHIS_PASSWORD:?error}
+    ports:
+      - '${MEMPHIS_PORT_UI}:${MEMPHIS_PORT_UI}'
+      - '${MEMPHIS_PORT_TCP}:${MEMPHIS_PORT_TCP}'
+      - '${MEMPHIS_PORT_GRPC}:${MEMPHIS_PORT_GRPC}'
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - network_memphis
+
+  memphis-rest-gateway:
+    image: 'memphisos/memphis-rest-gateway:latest'
+    container_name: memphis-rest-gateway
+    depends_on:
+      memphis:
+        condition: service_healthy
+    environment:
+      JWT_SECRET: ${JWT_SECRET:?error}
+      REFRESH_JWT_SECRET: ${JWT_REFRESH_SECRET:?error}
+      USER_PASS_BASED_AUTH: ${MEMPHIS_USER_PASS_BASED_AUTH:?error}
+      CONNECTION_TOKEN: ${MEMPHIS_CONNECTION_TOKEN:?error}
+      ROOT_USER: ${MEMPHIS_ROOT_USERNAME:?error}
+      ROOT_PASSWORD: ${MEMPHIS_ROOT_PASSWORD:?error}
+      MEMPHIS_HOST: ${MEMPHIS_DB_HOST:?error}
+      HTTP_PORT: ${MEMPHIS_REST_PORT:?error}
+    ports:
+      - '${MEMPHIS_REST_PORT}:${MEMPHIS_REST_PORT}'
+    networks:
+      - network_memphis
+
+networks:
+  network_backend:
+    external: true
+    name: scca_network_backend
+  network_memphis:
+    external: true
+    name: scca_network_memphis
+  network_monitoring:
+    external: true
+    name: scca_network_monitoring
+
+volumes:
+  vault_data:

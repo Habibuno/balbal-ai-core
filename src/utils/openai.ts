@@ -15,7 +15,6 @@ export async function generateCodeWithOpenAI(
 			Technical Requirements:
 			1. React Native Specific:
 				- Use React Native components (View, Text, TouchableOpacity, etc.)
-				- Implement proper navigation using @react-navigation/native
 				- Use React Native specific styling and layout
 				- Handle platform-specific code when needed
 
@@ -25,57 +24,45 @@ export async function generateCodeWithOpenAI(
 				- Handle different screen sizes and orientations
 				- Implement smooth transitions and animations
 
-			3. Navigation:
-				- Set up proper screen navigation using React Navigation
-				- Handle back navigation
-				- Implement bottom tabs or drawer if needed
-				- Add proper navigation headers
-				- Don't use createStackNavigator, use createNativeStackNavigator instead
-
-			4. State Management:
-				- Use React Context or Redux for global state
+			3. State Management:
+				- Use React hooks for state management
 				- Handle loading and error states
 				- Implement proper data persistence
 				- Add offline support where needed
 
-			5. Mobile Features:
+			4. Mobile Features:
 				- Handle device orientation
 				- Implement proper keyboard handling
 				- Add pull-to-refresh where appropriate
 				- Handle mobile gestures
 
-			6. Performance:
+			5. Performance:
 				- Optimize for mobile devices
-				- Implement proper lazy loading
 				- Handle memory constraints
 				- Optimize images and assets
 
-			7. Code Structure:
-				- Split into reusable components
+			6. Code Structure:
+				- Keep all components and logic in a single file
 				- Use TypeScript for type safety
 				- Add proper error boundaries
 				- Follow React Native best practices
 
 			Required File Structure:
-			You MUST return a JSON object containing multiple files organized in the following structure:
-			1. Main application file (e.g., App.tsx)
-			2. Multiple screen components in a 'screens' directory
-			3. Multiple reusable components in a 'components' directory
-			4. Utility files in a 'utils' directory
-			5. Type definitions in a 'types' directory
+			You MUST return a JSON object containing a single file:
+			{
+				"App.tsx": "// Complete application code here"
+			}
 
-			Each file should contain complete, working React Native code. The response MUST be a valid JSON object where:
-			- Keys are the file paths (without 'src/' prefix)
-			- Values are the complete file contents as strings
-			- File names should be descriptive of their purpose
+			The response MUST be a valid JSON object where:
+			- The key is "App.tsx"
+			- The value is the complete application code as a string
 			- Use proper React Native imports and components
+			- Include all necessary components and logic in this single file
+			- Use StyleSheet for styling
 
 			Example response format:
 			{
-				"App.tsx": "import React from 'react'; import { NavigationContainer } from '@react-navigation/native'; ...",
-				"screens/UserProfileScreen.tsx": "import React from 'react'; import { View, Text } from 'react-native'; ...",
-				"components/UserAvatar.tsx": "import React from 'react'; import { Image } from 'react-native'; ...",
-				...
+				"App.tsx": "import React from 'react';\nimport { View, Text, StyleSheet } from 'react-native';\n\nexport default function App() {\n  return (\n    <View style={styles.container}>\n      <Text style={styles.text}>Hello World</Text>\n    </View>\n  );\n}\n\nconst styles = StyleSheet.create({\n  container: {\n    flex: 1,\n    alignItems: 'center',\n    justifyContent: 'center',\n  },\n  text: {\n    fontSize: 24,\n  },\n});"
 			}
 		`;
 

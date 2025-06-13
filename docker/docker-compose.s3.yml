@@ -1,0 +1,82 @@
+---
+services:
+  supabase-storage:
+    container_name: supabase-storage
+    image: supabase/storage-api:v1.14.5
+    restart: always
+    depends_on:
+      supabase-imgproxy:
+        condition: service_started
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://127.0.0.1:5000/status",
+        ]
+      timeout: 5s
+      interval: 5s
+      retries: 3
+    environment:
+      DEBUG: true
+      ANON_KEY: ${ANON_KEY:?error}
+      SERVICE_KEY: ${SERVICE_ROLE_KEY:?error}
+      POSTGREST_URL: http://supabase-rest:3000
+      PGRST_JWT_SECRET: ${JWT_SECRET:?error}
+      DATABASE_URL: ${STORAGE_DATABASE_URL:?error}
+      FILE_SIZE_LIMIT: ${STORAGE_FILE_SIZE_LIMIT:?error}
+      STORAGE_BACKEND: ${STORAGE_BACKEND:?error}
+
+      GLOBAL_S3_BUCKET: ${STORAGE_BUCKET:?error}
+      GLOBAL_S3_ENDPOINT: ${STORAGE_S3_ENDPOINT:?error}
+      GLOBAL_S3_PROTOCOL: ${STORAGE_S3_PROTOCOL:?error}
+      GLOBAL_S3_FORCE_PATH_STYLE: ${STORAGE_S3_FORCE_PATH_STYLE:?error}
+
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER:?error}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:?error}
+      AWS_DEFAULT_REGION: stub
+
+      FILE_STORAGE_BACKEND_PATH: ${STORAGE_FILE_BACKEND_PATH:?error}
+      TENANT_ID: ${STORAGE_BUCKET:?error}
+      REGION: ${STORAGE_BUCKET:?error}
+      ENABLE_IMAGE_TRANSFORMATION: ${STORAGE_ENABLE_IMAGE_TRANSFORMATION:?error}
+      IMGPROXY_URL: ${IMGPROXY_URL:?error}
+    volumes:
+      - ./.docker/volumes/storage:/var/lib/storage:z
+    ports:
+      - "5002:5000"
+    networks:
+      - network_backend
+
+  supabase-imgproxy:
+    container_name: supabase-imgproxy
+    image: darthsim/imgproxy:v3.8.0
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "imgproxy", "health"]
+      timeout: 5s
+      interval: 5s
+      retries: 3
+    environment:
+      IMGPROXY_BIND: ":5001"
+      IMGPROXY_LOCAL_FILESYSTEM_ROOT: /
+      IMGPROXY_USE_ETAG: "true"
+      IMGPROXY_ENABLE_WEBP_DETECTION: ${IMGPROXY_ENABLE_WEBP_DETECTION:?error}
+    volumes:
+      - ./.docker/volumes/storage:/var/lib/storage:z
+    networks:
+      - network_backend
+
+networks:
+  network_backend:
+    external: true
+    name: scca_network_backend
+  network_memphis:
+    external: true
+    name: scca_network_memphis
+  network_monitoring:
+    external: true
+    name: scca_network_monitoring

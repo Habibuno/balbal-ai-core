@@ -1,4 +1,4 @@
-type ConsoleMessage = {
+export type ConsoleMessage = {
 	id: string;
 	message: string;
 };

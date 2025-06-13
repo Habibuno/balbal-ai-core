@@ -1,0 +1,160 @@
+---
+x-stack-name: scca-devops
+
+services:
+  database:
+    image: supabase/postgres:15.8.1.020
+    container_name: database
+    volumes:
+      - ./.docker/volumes/db/init.sql:/docker-entrypoint-initdb.d/init.sql:Z
+      - ./.docker/volumes/db/realtime.sql:/docker-entrypoint-initdb.d/migrations/99-realtime.sql:Z
+      - ./.docker/volumes/db/webhooks.sql:/docker-entrypoint-initdb.d/init-scripts/98-webhooks.sql:Z
+      - ./.docker/volumes/db/roles.sql:/docker-entrypoint-initdb.d/init-scripts/99-roles.sql:Z
+      - ./.docker/volumes/db/jwt.sql:/docker-entrypoint-initdb.d/init-scripts/99-jwt.sql:Z
+      - ./.docker/volumes/db/_supabase.sql:/docker-entrypoint-initdb.d/migrations/97-_supabase.sql:Z
+      - ./.docker/volumes/db/logs.sql:/docker-entrypoint-initdb.d/migrations/99-logs.sql:Z
+      - ./.docker/volumes/db/pooler.sql:/docker-entrypoint-initdb.d/migrations/99-pooler.sql:Z
+      - postgres_data:/etc/postgresql-custom
+    ports:
+      - ${POSTGRES_PORT}:${POSTGRES_PORT}
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?error}
+      POSTGRES_DB: ${POSTGRES_DB:?error}
+      POSTGRES_PORT: ${POSTGRES_PORT:?error}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?error}
+      POSTGRES_HOST: /var/run/postgresql
+      PGHOST: /var/run/postgresql
+      PGPASSWORD: ${POSTGRES_PASSWORD:?error}
+      PGPORT: ${POSTGRES_PORT:?error}
+      PGDATABASE: ${POSTGRES_DB:?error}
+      JWT_SECRET: ${JWT_SECRET:?error}
+      JWT_EXP: ${JWT_EXPIRY:?error}
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command:
+      [
+        'postgres',
+        '-c',
+        'config_file=/etc/postgresql/postgresql.conf',
+        '-c',
+        'log_min_messages=fatal',
+      ]
+    networks:
+      - network_backend
+      - network_memphis
+
+  nginx:
+    image: 'jc21/nginx-proxy-manager:latest'
+    container_name: nginx-proxy-manager
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '81:81'
+      - '443:443'
+    volumes:
+      - ./.docker/nginx/nginx-data:/data
+      - ./.docker/nginx/nginx-letsencrypt:/etc/letsencrypt
+      - ./.docker/nginx/nginx-snippets:/snippets:ro -
+      - ./.docker/nginx/proxy.conf:/snippets/proxy.conf
+      - ./.docker/authelia/nginx/authelia.conf:/snippets/authelia.conf
+      - ./.docker/authelia/nginx/authelia-auth-request.conf:/snippets/authelia-auth-request.conf
+    networks:
+      - network_monitoring
+      - network_backend
+      - network_memphis
+
+  authelia:
+    container_name: authelia
+    image: authelia/authelia
+    restart: unless-stopped
+    expose:
+      - 9091
+    volumes:
+      - ./.docker/authelia/config:/config
+    environment:
+      TZ: 'Europe/Paris'
+    networks:
+      - network_backend
+
+  whoami:
+    image: traefik/whoami
+    container_name: whoami
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.whoami.rule=Host(`whoami.localhost`)'
+    networks:
+      - network_backend
+
+  minio:
+    container_name: minio
+    image: minio/minio
+    ports:
+      - '9003:9000'
+      - '9001:9001'
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?error}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?error}
+    command: "server --console-address ':9001' /data"
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://minio:9000/minio/health/live']
+      interval: 2s
+      timeout: 10s
+      retries: 5
+    volumes:
+      - ./.docker/volumes/storage:/data:z
+    networks:
+      - network_backend
+
+  minio-createbucket:
+    container_name: minio-createbucket
+    image: minio/mc
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c " echo '🔄 Initialisation de Minio...';
+
+      echo '🔄 Configuration de l’alias Minio...'; mc alias set local
+      http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD} || { echo '❌
+      Impossible de configurer l’alias Minio' && exit 1; }
+
+      mc alias list || { echo '❌ L’alias Minio ne fonctionne pas !' && exit 1;
+      }
+
+      if mc ls local/stub >/dev/null 2>&1; then
+        echo '✅ Le bucket local/stub existe déjà.';
+      else
+        echo '🛠 Création du bucket local/stub...';
+        mc mb local/stub || { echo '❌ Impossible de créer le bucket !' && exit
+      1; } fi
+
+      mc anonymous set public local/stub || { echo '❌ Impossible de définir la
+      politique publique !' && exit 1; }
+
+      mc policy set public local/stub || { echo '❌ Impossible de forcer la
+      politique publique !' && exit 1; }
+
+      echo '✅ Minio est correctement configuré !'; exit 0; "
+    networks:
+      - network_backend
+
+networks:
+  network_backend:
+    driver: bridge
+  network_memphis:
+    driver: bridge
+  network_monitoring:
+    driver: bridge
+  network_vault:
+    ipam:
+      config:
+        - subnet: 172.21.0.0/24
+
+volumes:
+  postgres_data:
+  grafana_data:
+  vault_data:
+  memphis_metadata_data:
