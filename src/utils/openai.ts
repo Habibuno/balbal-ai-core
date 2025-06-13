@@ -46,6 +46,7 @@ export async function generateCodeWithOpenAI(
 				- Use TypeScript for type safety
 				- Add proper error boundaries
 				- Follow React Native best practices
+				- No comments in the code
 
 			Required File Structure:
 			You MUST return a JSON object containing a single file:
@@ -73,7 +74,7 @@ export async function generateCodeWithOpenAI(
 				'Authorization': `Bearer ${AI_CONFIG.apiKey}`,
 			},
 			body: JSON.stringify({
-				model: options.model || 'gpt-3.5-turbo',
+				model: options.model || 'gpt-4o-mini',
 				messages: [
 					{
 						role: 'system',
@@ -85,7 +86,7 @@ export async function generateCodeWithOpenAI(
 					},
 				],
 				temperature: options.temperature || 0.7,
-				max_tokens: options.maxTokens || 4000,
+				max_tokens: options.maxTokens || 6000,
 			}),
 		});
 

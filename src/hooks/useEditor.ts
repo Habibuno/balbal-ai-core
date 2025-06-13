@@ -1,7 +1,4 @@
 import * as esbuild from 'esbuild-wasm';
-import { default as parserBabel } from 'prettier/parser-babel';
-import parserTs from 'prettier/parser-typescript';
-import prettier from 'prettier/standalone';
 import { useEffect, useState } from 'react';
 
 import type { EditorState } from '../types/editor';
@@ -248,87 +245,37 @@ const styles = StyleSheet.create({
 			if (typeof response === 'object' && response !== null) {
 				files = response as Record<string, string>;
 			} else if (typeof response === 'string') {
-				const cleanedResponse = response
-					.split('')
-					.filter((char) => {
-						const code = char.charCodeAt(0);
-						return code >= 32 && code !== 127;
-					})
-					.join('')
-					.replace(/\\n/g, '\n')
-					.replace(/\\r/g, '\r')
-					.replace(/\\t/g, '\t')
-					.replace(/\\"/g, '"')
-					.replace(/\\\\/g, '\\')
-					.replace(/\n\s*\n/g, '\n')
-					.trim();
-
 				try {
-					const parsedResponse = JSON.parse(cleanedResponse);
+					// Try to parse as JSON first
+					const parsedResponse = JSON.parse(response);
 					if (typeof parsedResponse === 'object' && parsedResponse !== null) {
 						files = parsedResponse;
 					} else {
 						throw new Error('Parsed response is not an object');
 					}
 				} catch {
-					const fileEntries = cleanedResponse.match(/"([^"]+)":\s*"([^"]*)(?<!\\)"/g);
-					if (fileEntries) {
-						files = {};
-						for (const entry of fileEntries) {
-							const match = entry.match(/"([^"]+)":\s*"([^"]*)(?<!\\)"/);
-							if (match) {
-								const [, filename, content] = match;
-								const cleanedContent = content
-									.replace(/\\n/g, '\n')
-									.replace(/\\r/g, '\r')
-									.replace(/\\t/g, '\t')
-									.replace(/\\"/g, '"')
-									.replace(/\\\\/g, '\\');
-								files[filename] = cleanedContent;
-							}
-						}
-					} else {
-						files = { 'App.tsx': cleanedResponse };
-					}
+					// If not JSON, treat as a single file
+					files = { 'App.tsx': response };
 				}
 			} else {
 				throw new TypeError('Invalid response format');
 			}
 
-			const unformattedFiles: Record<string, string> = {};
-			for (const [key, value] of Object.entries(files)) {
+			const formattedFiles: Record<string, string> = {};
+			for (const [key, rawCode] of Object.entries(files)) {
+				const deduped = dedupeImports(rawCode);
 				const filePath = key.startsWith('src/') ? key : `src/${key}`;
-				const dedupedCode = dedupeImports(value);
-
-				try {
-					const ext = filePath.split('.').pop();
-					const parser = ext === 'ts' || ext === 'tsx' ? 'typescript' : 'babel';
-
-					const formatted = prettier.format(dedupedCode, {
-						parser,
-						plugins: [parserBabel, parserTs],
-						semi: true,
-						singleQuote: true,
-						trailingComma: 'es5',
-						tabWidth: 2,
-						printWidth: 80,
-					});
-
-					unformattedFiles[filePath] = await formatted;
-				} catch (error) {
-					console.error('Error formatting code:', error);
-					unformattedFiles[filePath] = dedupedCode;
-				}
+				formattedFiles[filePath] = deduped;
 			}
 
-			setState((prev) => ({
+			setState(prev => ({
 				...prev,
-				files: { ...prev.files, ...unformattedFiles },
-				selectedFile: Object.keys(unformattedFiles)[0] || prev.selectedFile,
+				files: { ...prev.files, ...formattedFiles },
+				selectedFile: Object.keys(formattedFiles)[0] || prev.selectedFile,
 				prompt: '',
 				consoleMessages: [...prev.consoleMessages, {
 					id: `success-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-					message: `✨ Generated ${Object.keys(unformattedFiles).length} files at ${new Date().toLocaleTimeString()}`,
+					message: `✨ Generated ${Object.keys(formattedFiles).length} files at ${new Date().toLocaleTimeString()}`,
 				}],
 			}));
 		} catch (error) {

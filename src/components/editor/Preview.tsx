@@ -36,6 +36,12 @@ type PreviewScope = {
 	render: (el: React.ReactElement) => HTMLElement;
 	module: { exports: Record<string, unknown> };
 	exports: Record<string, unknown>;
+	useState: typeof React.useState;
+	useEffect: typeof React.useEffect;
+	useRef: typeof React.useRef;
+	useCallback: typeof React.useCallback;
+	useMemo: typeof React.useMemo;
+	useContext: typeof React.useContext;
 } & typeof RNW;
 
 export function Preview({ files }: PreviewProps) {
@@ -59,6 +65,12 @@ export function Preview({ files }: PreviewProps) {
 		React,
 		ReactDOM,
 		...RNW,
+		useState: React.useState,
+		useEffect: React.useEffect,
+		useRef: React.useRef,
+		useCallback: React.useCallback,
+		useMemo: React.useMemo,
+		useContext: React.useContext,
 		ReactNavigationNative: (window as unknown as { ReactNavigationNative: ReactNavigationType }).ReactNavigationNative,
 		ReactNavigationNativeStack: (window as unknown as { ReactNavigationNativeStack: ReactNavigationType }).ReactNavigationNativeStack,
 		ReactNavigationBottomTabs: (window as unknown as { ReactNavigationBottomTabs: ReactNavigationBottomTabsType }).ReactNavigationBottomTabs,
