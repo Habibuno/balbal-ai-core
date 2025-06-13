@@ -458,22 +458,24 @@ export default function SettingsPage() {
 					<div className="flex items-center justify-between">
 						<div>
 							<h3 className="font-medium">Plan {user.subscription.plan}</h3>
-							<p className="text-sm text-gray-400">
-								Statut: {user.subscription.status}
-								{user.subscription.expiresAt && (
-									<>
-										{' '}
-										- Expire le {new Date(user.subscription.expiresAt).toLocaleDateString()}
-									</>
-								)}
+							<div className="text-sm text-gray-400">
+								<p>
+									Statut: {user.subscription.status}
+									{user.subscription.expiresAt && (
+										<>
+											{' '}
+											- Expire le {new Date(user.subscription.expiresAt).toLocaleDateString()}
+										</>
+									)}
+								</p>
 								{user.subscription.paymentMethod && (
-									<p className="mt-2 text-sm text-gray-400">
+									<p className="mt-2">
 										Méthode de paiement: {user.subscription.paymentMethod.type === 'card' ? 'Carte' : 'PayPal'}
 										{user.subscription.paymentMethod.last4 && ` (****${user.subscription.paymentMethod.last4})`}
 										{user.subscription.paymentMethod.expiryDate && ` - Expire ${user.subscription.paymentMethod.expiryDate}`}
 									</p>
 								)}
-							</p>
+							</div>
 						</div>
 						<div className="space-y-2">
 							<Button variant="outline" size="sm">

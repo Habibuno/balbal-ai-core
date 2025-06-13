@@ -1,7 +1,7 @@
 import { Home, Plus } from 'lucide-react';
-import React from 'react';
+import type React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 import { LanguageSelector } from '../LanguageSelector';
 import { Button } from '../ui/Button';
@@ -33,6 +33,7 @@ const mockApps = [
 
 export const Dashboard: React.FC = () => {
 	const { t } = useTranslation();
+	const navigate = useNavigate();
 
 	return (
 		<div className="bg-cyber-black min-h-screen px-4 py-12">
@@ -48,7 +49,7 @@ export const Dashboard: React.FC = () => {
 					</div>
 					<div className="flex items-center gap-4">
 						<LanguageSelector />
-						<Button icon={<Plus className="h-5 w-5" />}>Create New App</Button>
+						<Button icon={<Plus className="h-5 w-5" />} onClick={() => navigate('/create')}>Create New App</Button>
 					</div>
 				</div>
 				<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">

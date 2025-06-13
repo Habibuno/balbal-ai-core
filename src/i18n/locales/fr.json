@@ -55,8 +55,10 @@
 		"es": "Español"
 	},
 	"navigation": {
-		"backToHome": "Retour à l'Accueil",
-		"pricing": "Tarifs"
+		"backToHome": "Retour à l'accueil",
+		"backToEditor": "Retour à l'éditeur",
+		"settings": "Paramètres",
+		"dashboard": "Tableau de bord"
 	},
 	"pricing": {
 		"title": "Choisissez Votre Plan",

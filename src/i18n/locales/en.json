@@ -56,6 +56,9 @@
 	},
 	"navigation": {
 		"backToHome": "Back to Home",
+		"backToEditor": "Back to Editor",
+		"settings": "Settings",
+		"dashboard": "Dashboard",
 		"pricing": "Pricing"
 	},
 	"pricing": {

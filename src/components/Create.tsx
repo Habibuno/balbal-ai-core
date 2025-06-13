@@ -1,5 +1,5 @@
 import { Tab } from '@headlessui/react';
-import { ArrowLeft, Code2, Eye, Settings } from 'lucide-react';
+import { ArrowLeft, Code2, Eye, LayoutDashboard, Settings } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -132,14 +132,24 @@ export const Create: React.FC = () => {
 					</Button>
 					<h1 className="text-xl font-semibold text-white">BalBal.io Editor</h1>
 				</div>
-				<Button
-					variant="outline"
-					onClick={() => navigate('/settings')}
-					icon={<Settings className="h-5 w-5" />}
-					size="sm"
-				>
-					Settings
-				</Button>
+				<div className="flex items-center gap-2">
+					<Button
+						variant="outline"
+						onClick={() => navigate('/dashboard')}
+						icon={<LayoutDashboard className="h-5 w-5" />}
+						size="sm"
+					>
+						{t('navigation.dashboard')}
+					</Button>
+					<Button
+						variant="outline"
+						onClick={() => navigate('/settings')}
+						icon={<Settings className="h-5 w-5" />}
+						size="sm"
+					>
+						{t('navigation.settings')}
+					</Button>
+				</div>
 			</div>
 
 			{/* Main Content */}
