@@ -1,4 +1,5 @@
 import * as esbuild from 'esbuild-wasm';
+import prettier from 'prettier/standalone';
 import { useEffect, useRef, useState } from 'react';
 
 import type { EditorState } from '../../types/editor';
@@ -7,17 +8,6 @@ import { generateCodeWithOpenAI } from '../../utils/openai';
 let esbuildInitPromise: Promise<void> | null = null;
 let isInitializing = false;
 const generateUniqueId = () => `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-
-function transformImports(files: Record<string, string>) {
-	return Object.fromEntries(
-		Object.entries(files).map(([filePath, content]) => {
-			let newContent = content;
-			newContent = newContent.replace(/from\s+['"]react-native['"]/g, 'from \'react-native-web\'');
-
-			return [filePath, newContent];
-		})
-	);
-}
 
 async function initializeEsbuild() {
 	if (esbuildInitPromise) return esbuildInitPromise;
@@ -182,38 +172,24 @@ const styles = StyleSheet.create({
 			await initializeEsbuild();
 			setState(prev => ({ ...prev, esbuildReady: true }));
 		}
-		console.log('🔍 All Files :', allFiles);
-		const preProcessedFiles = transformImports(allFiles);
 
 		try {
 			return await esbuild.build({
 				entryPoints: [entry],
 				bundle: true,
+				plugins: [createVirtualFilePlugin(allFiles)],
 				write: false,
-				plugins: [createVirtualFilePlugin(preProcessedFiles)],
 				jsx: 'transform',
 				jsxFactory: 'React.createElement',
 				jsxFragment: 'React.Fragment',
 				target: 'esnext',
 				platform: 'browser',
-				format: 'esm',
-				// external: ['react', 'react-dom', 'react-native-web', 'react/jsx-runtime'],
-				// banner: {
-				// 	js: `
-				// 		const React = window.React;
-				// 		const ReactDOM = window.ReactDOM;
-				// 		const ReactNativeWeb = window.ReactNativeWeb;
-				// 	`,
-				// },
-				loader: {
-					'.js': 'jsx',
-					'.jsx': 'jsx',
-					'.ts': 'tsx',
-					'.tsx': 'tsx',
-				},
-				define: {
-					'process.env.NODE_ENV': '"development"',
-				},
+				format: 'iife',
+				globalName: 'AppBundle',
+				define: { 'process.env.NODE_ENV': '"development"' },
+				// ⬇️ on enlève complètement external
+				// external: [...],
+				loader: { '.js': 'jsx', '.jsx': 'jsx', '.ts': 'tsx', '.tsx': 'tsx' },
 			});
 		} catch (error) {
 			console.error('Compilation error:', error);
@@ -223,11 +199,7 @@ const styles = StyleSheet.create({
 
 	const formatCode = async (code: string) => {
 		try {
-			const formattedCode = await window.prettier.format(code, {
-				parser: 'babel',
-				plugins: window.prettierPlugins,
-				format: 'iife',
-				globalName: 'AppBundle',
+			const formattedCode = await prettier.format(code, {
 				semi: true,
 				singleQuote: true,
 				trailingComma: 'es5',

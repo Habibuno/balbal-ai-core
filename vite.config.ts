@@ -1,5 +1,6 @@
 import process from 'node:process';
 
+import commonjs from '@rollup/plugin-commonjs';
 import react from '@vitejs/plugin-react';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig } from 'vite';
@@ -7,6 +8,7 @@ import { defineConfig } from 'vite';
 export default defineConfig({
 	plugins: [
 		react(),
+		commonjs(),
 		visualizer({
 			filename: 'dist/stats.html',
 			open: true,
@@ -14,6 +16,18 @@ export default defineConfig({
 			brotliSize: true,
 		}),
 	],
+	optimizeDeps: {
+		include: [
+			'react',
+			'react-dom',
+			'react-router-dom',
+			'prettier/standalone',
+			'prettier/parser-babel',
+		],
+	},
+	ssr: {
+		noExternal: ['prettier'],
+	},
 	server: {
 		headers: {
 			'X-Content-Type-Options': 'nosniff',
@@ -34,9 +48,6 @@ export default defineConfig({
 				},
 			},
 		},
-	},
-	optimizeDeps: {
-		include: ['react', 'react-dom', 'react-router-dom'],
 	},
 	define: {
 		'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),

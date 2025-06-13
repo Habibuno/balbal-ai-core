@@ -1,25 +1,70 @@
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { LiveError, LivePreview, LiveProvider } from 'react-live';
+import * as RNW from 'react-native-web';
+
 type PreviewProps = {
-	previewHtml: string;
+	files: Record<string, string>;
 };
 
-export const Preview: React.FC<PreviewProps> = ({ previewHtml }) => {
+export function Preview({ files }: PreviewProps) {
+	function render(el: React.ReactElement) {
+		const mount = document.createElement('div');
+		ReactDOM.createRoot(mount).render(el);
+		return mount;
+	}
+
+	const combinedCode = Object.values(files)
+		.map(code =>
+			code
+				.replace(/^import\s.+?;$/gm, '')
+				.replace(/export\s+default\s+function\s+(\w+)/, 'function $1')
+				.replace(/^export\s+(const|let|var|function|class)\s+/gm, '$1 ')
+				.replace(/^export\s*\{[^}]+\}\s*;$/gm, '')
+		)
+		.join('\n');
+
+	const scope: any = {
+		React,
+		ReactDOM,
+		...RNW,
+		ReactNavigationNative: (window as any).ReactNavigationNative,
+		ReactNavigationNativeStack: (window as any).ReactNavigationNativeStack,
+		ReactNavigationBottomTabs: (window as any).ReactNavigationBottomTabs,
+		render,
+		module: { exports: {} },
+		exports: {},
+	};
+
+	let cleaned = combinedCode;
+	cleaned = cleaned
+		.replace(/require\(['"]react['"]\)/g, 'React')
+		.replace(/require\(['"]react-dom['"]\)/g, 'ReactDOM')
+		.replace(/require\(['"]react-native-web['"]\)/g, 'ReactNativeWeb')
+		.replace(/require\(['"]@react-navigation\/native['"]\)/g, 'ReactNavigationNative')
+		.replace(/require\(['"]@react-navigation\/native-stack['"]\)/g, 'ReactNavigationNativeStack')
+		.replace(/require\(['"]@react-navigation\/bottom-tabs['"]\)/g, 'ReactNavigationBottomTabs');
+
 	return (
-		<div className="flex h-full flex-col items-center justify-center bg-[#111] p-4">
-			<div className="h-[640px] w-[360px] overflow-hidden rounded-[2rem] border-8 border-gray-800 bg-black shadow-xl">
-				<div className="relative h-6 bg-black">
-					<div className="absolute left-1/2 top-0 h-6 w-24 -translate-x-1/2 rounded-b-xl bg-black" />
-				</div>
-				<iframe
-					srcDoc={previewHtml}
-					sandbox="allow-scripts"
-					title="preview"
-					className="h-full w-full"
-				/>
-
-				<div className="flex h-2 items-center justify-center">
-					<div className="h-1 w-20 rounded-full bg-gray-700" />
-				</div>
-			</div>
-		</div>
+		<LiveProvider
+			code={cleaned}
+			scope={scope}
+			noInline
+			transformCode={code => `
+        ${code}
+        render(React.createElement(App));
+      `}
+		>
+			<LiveError style={{ color: 'salmon' }} />
+			<LivePreview
+				style={{
+					border: '1px solid #444',
+					padding: '1rem',
+					borderRadius: '4px',
+					background: '#111',
+					minHeight: 400,
+				}}
+			/>
+		</LiveProvider>
 	);
-};
+}

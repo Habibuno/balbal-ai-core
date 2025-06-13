@@ -52,25 +52,43 @@ export const Create: React.FC = () => {
 <html>
   <head>
     <meta charset="UTF-8" />
+    <script
+      crossorigin
+      src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"
+    ></script>
+    <script
+      crossorigin
+      src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"
+    ></script>
+		<script src="https://unpkg.com/@react-navigation/native@6.1.6/dist/index.umd.js"></script>
+	<script src="https://unpkg.com/@react-navigation/native-stack@6.9.12/dist/index.umd.js"></script>
+
+    <script src="https://unpkg.com/react-native-web@0.18.10/dist/index.umd.js"></script>
+
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>html, body, #root_preview { margin:0; padding:0; height:100%; }</style>
+    <style>
+      html, body, #root_preview { margin:0; padding:0; height:100%; }
+    </style>
   </head>
   <body>
     <div id="root_preview"></div>
+
     <script type="module">
-			import React from 'https://esm.sh/react@18.2.0';
-			import ReactDOM from 'https://esm.sh/react-dom@18.2.0/client';
-			import * as RNW from 'https://esm.sh/react-native-web@0.18.10';
-			const { View, Text, StyleSheet } = RNW;
+      const React = window.React;
+      const ReactDOM = window.ReactDOM;
+      const RNW = window.ReactNativeWeb;
+      const { View, Text, StyleSheet } = RNW;
 
+			${jsBundle}
 
-      ${jsBundle}
-
-      const root = ReactDOM.createRoot(document.getElementById('root_preview'));
+      const root = ReactDOM.createRoot(
+        document.getElementById('root_preview')
+      );
       root.render(React.createElement(App));
     </script>
   </body>
 </html>
+
 `;
 
 			const previewFrame = document.querySelector('iframe[title="preview"]') as HTMLIFrameElement;
@@ -172,8 +190,8 @@ export const Create: React.FC = () => {
 									selectedFile={state.selectedFile}
 								/>
 							</Tab.Panel>
-							<Tab.Panel className="h-full">
-								<Preview previewHtml={state.previewHtml} />
+							<Tab.Panel className="h-full" unmount={false}>
+								<Preview files={state.files} />
 							</Tab.Panel>
 						</Tab.Panels>
 					</Tab.Group>

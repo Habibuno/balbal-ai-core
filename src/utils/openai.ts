@@ -30,6 +30,7 @@ export async function generateCodeWithOpenAI(
 				- Handle back navigation
 				- Implement bottom tabs or drawer if needed
 				- Add proper navigation headers
+				- Don't use createStackNavigator, use createNativeStackNavigator instead
 
 			4. State Management:
 				- Use React Context or Redux for global state

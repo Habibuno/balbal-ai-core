@@ -1,7 +1,7 @@
 import { javascript } from '@codemirror/lang-javascript';
 import { oneDark } from '@codemirror/theme-one-dark';
 import CodeMirror from '@uiw/react-codemirror';
-import { CheckCheck, Copy, Play } from 'lucide-react';
+import { CheckCheck, Copy } from 'lucide-react';
 import type { KeyboardEvent } from 'react';
 import { useState } from 'react';
 
@@ -48,9 +48,6 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 					}
 				>
 					{copied ? 'Copié !' : 'Copier'}
-				</Button>
-				<Button size="sm" onClick={onExecute} icon={<Play className="h-4 w-4" />}>
-					Exécuter
 				</Button>
 			</div>
 			<div className="h-[calc(100%-3rem)] overflow-hidden rounded-xl border border-gray-800">
