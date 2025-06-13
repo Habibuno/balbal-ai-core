@@ -87,15 +87,20 @@ export function Preview({ files }: PreviewProps) {
       `}
 		>
 			<LiveError style={{ color: 'salmon' }} />
-			<LivePreview
-				style={{
-					border: '1px solid #444',
-					padding: '1rem',
-					borderRadius: '4px',
-					background: '#111',
-					minHeight: 400,
-				}}
-			/>
+			<div className="relative mx-auto w-[375px] rounded-[60px] shadow-xl">
+				{/* Notch */}
+				<div className="absolute left-1/2 top-0 h-6 w-40 -translate-x-1/2 rounded-b-3xl bg-gray-800" />
+				{/* Screen */}
+				<div className="overflow-hidden rounded-[40px] bg-white m-4">
+					<LivePreview
+						style={{
+							background: '#fff',
+							minHeight: 600,
+							width: '100%',
+						}}
+					/>
+				</div>
+			</div>
 		</LiveProvider>
 	);
 }
