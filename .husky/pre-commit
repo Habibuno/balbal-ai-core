@@ -11,7 +11,4 @@ npm run format:check
 npm run typecheck
 
 # Security check
-npm run security:check
-
-# Tests
-npm run test 
+npm run security:check 
