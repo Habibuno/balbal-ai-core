@@ -3,6 +3,9 @@ import ReactDOM from 'react-dom/client';
 import { LiveError, LivePreview, LiveProvider } from 'react-live';
 import * as RNW from 'react-native-web';
 
+import { sendErrorReport } from '../../api/reporting';
+import { reportError } from '../../utils/reporting';
+
 type PreviewProps = {
 	files: Record<string, string>;
 };
@@ -86,7 +89,8 @@ export function Preview({ files }: PreviewProps) {
 		.replace(/require\(['"]react-native-web['"]\)/g, 'ReactNativeWeb')
 		.replace(/require\(['"]@react-navigation\/native['"]\)/g, 'ReactNavigationNative')
 		.replace(/require\(['"]@react-navigation\/native-stack['"]\)/g, 'ReactNavigationNativeStack')
-		.replace(/require\(['"]@react-navigation\/bottom-tabs['"]\)/g, 'ReactNavigationBottomTabs');
+		.replace(/require\(['"]@react-navigation\/bottom-tabs['"]\)/g, 'ReactNavigationBottomTabs')
+		.replace(/require\(['"]@react-native-community\/hooks['"]\)/g, '{ useDimensions }');
 
 	return (
 		<LiveProvider
@@ -94,11 +98,87 @@ export function Preview({ files }: PreviewProps) {
 			scope={scope}
 			noInline
 			transformCode={code => `
-        ${code}
-        render(React.createElement(App));
+        // Wrap the code in a function to avoid variable hoisting issues
+        (function() {
+          try {
+            const baseStyles = {
+              container: {
+                flex: 1,
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 16,
+                backgroundColor: '#fff',
+              },
+              text: {
+                fontSize: 16,
+                color: '#000',
+              },
+              button: {
+                backgroundColor: '#007AFF',
+                padding: 12,
+                borderRadius: 8,
+                marginTop: 16,
+              },
+              buttonText: {
+                color: '#fff',
+                fontSize: 16,
+                textAlign: 'center',
+              },
+            };
+
+            // Create a global styles object that can be used by the app
+            window.appStyles = baseStyles;
+
+            ${code}
+
+            // If the app doesn't define its own styles, use the base styles
+            if (typeof styles === 'undefined') {
+              const styles = window.appStyles;
+            }
+
+            render(React.createElement(App));
+          } catch (error) {
+            // Report the error
+            sendErrorReport({
+              error: {
+                name: error.name,
+                message: error.message,
+                stack: error.stack,
+              },
+              context: {
+                component: 'Preview',
+                action: 'Code Execution',
+                additionalData: {
+                  files: Object.keys(files),
+                  selectedFile: files[Object.keys(files)[0]],
+                },
+              },
+            });
+            throw error;
+          }
+        })();
       `}
 		>
-			<LiveError style={{ color: 'salmon' }} />
+			<LiveError
+				style={{ color: 'salmon' }}
+				onError={(error: Error) => {
+					sendErrorReport({
+						error: {
+							name: error.name,
+							message: error.message,
+							stack: error.stack,
+						},
+						context: {
+							component: 'Preview',
+							action: 'LiveError',
+							additionalData: {
+								files: Object.keys(files),
+								selectedFile: files[Object.keys(files)[0]],
+							},
+						},
+					});
+				}}
+			/>
 			<div className="relative mx-auto w-[375px] rounded-[60px] shadow-xl">
 				{/* Notch */}
 				<div className="absolute left-1/2 top-0 h-6 w-40 -translate-x-1/2 rounded-b-3xl bg-gray-800" />
@@ -109,6 +189,10 @@ export function Preview({ files }: PreviewProps) {
 							background: '#fff',
 							minHeight: 600,
 							width: '100%',
+							display: 'flex',
+							flexDirection: 'column',
+							alignItems: 'center',
+							justifyContent: 'center',
 						}}
 					/>
 				</div>

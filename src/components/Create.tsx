@@ -1,5 +1,5 @@
 import { Tab } from '@headlessui/react';
-import { ArrowLeft, Code2, Eye, LayoutDashboard, Settings } from 'lucide-react';
+import { ArrowLeft, Code2, Eye, LayoutDashboard, Settings, Mail } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -10,6 +10,7 @@ import { Preview } from './editor/Preview';
 import { Sidebar } from './editor/Sidebar';
 import { Terminal } from './editor/Terminal';
 import { Button } from './ui/Button';
+import { sendErrorReport } from '../api/reporting';
 
 // Helper to generate unique IDs
 const generateUniqueId = () => `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
@@ -19,6 +20,48 @@ export const Create: React.FC = () => {
 	const { t } = useTranslation();
 	const { state, setState, compileProject, handleGenerateWithAI } = useEditor();
 	const [tabIndex, setTabIndex] = useState(0);
+
+	const handleSendReport = async () => {
+		try {
+			await sendErrorReport({
+				error: {
+					name: 'Manual Report',
+					message: 'Manual error report from user',
+				},
+				context: {
+					component: 'Create',
+					action: 'Manual Report',
+					additionalData: {
+						currentFile: state.selectedFile,
+						files: Object.keys(state.files),
+						lastConsoleMessage: state.consoleMessages[state.consoleMessages.length - 1]?.message,
+					},
+				},
+			});
+
+			setState(prev => ({
+				...prev,
+				consoleMessages: [
+					...prev.consoleMessages,
+					{
+						id: generateUniqueId(),
+						message: '✅ Error report sent successfully',
+					},
+				],
+			}));
+		} catch (error) {
+			setState(prev => ({
+				...prev,
+				consoleMessages: [
+					...prev.consoleMessages,
+					{
+						id: generateUniqueId(),
+						message: `❌ Failed to send error report: ${error instanceof Error ? error.message : 'Unknown error'}`,
+					},
+				],
+			}));
+		}
+	};
 
 	const handleExecute = async () => {
 		try {
@@ -133,6 +176,14 @@ export const Create: React.FC = () => {
 					<h1 className="text-xl font-semibold text-white">BalBal.io Editor</h1>
 				</div>
 				<div className="flex items-center gap-2">
+					<Button
+						variant="outline"
+						onClick={handleSendReport}
+						icon={<Mail className="h-5 w-5" />}
+						size="sm"
+					>
+						Send Report
+					</Button>
 					<Button
 						variant="outline"
 						onClick={() => navigate('/dashboard')}
