@@ -4,14 +4,14 @@
 # Lint
 npm run lint
 
-# Tests
-npm run test
-
-# Vérification du formatage
+# Format check
 npm run format:check
 
-# Vérification des types
-npm run type-check
+# Type check
+npm run typecheck
 
-# Vérification de sécurité
-npm run security:check 
+# Security check
+npm run security:check
+
+# Tests
+npm run test 
