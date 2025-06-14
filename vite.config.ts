@@ -1,7 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import process from 'node:process';
 
-import commonjs from '@rollup/plugin-commonjs';
 import react from '@vitejs/plugin-react';
 import nodemailer from 'nodemailer';
 import { visualizer } from 'rollup-plugin-visualizer';
@@ -144,7 +143,6 @@ Additional Data: ${JSON.stringify(context.additionalData || {}, null, 2)}
 export default defineConfig({
 	plugins: [
 		react(),
-		commonjs(),
 		visualizer({
 			filename: 'dist/stats.html',
 			open: true,
@@ -153,18 +151,6 @@ export default defineConfig({
 		}),
 		apiPlugin(),
 	],
-	optimizeDeps: {
-		include: [
-			'react',
-			'react-dom',
-			'react-router-dom',
-			'prettier/standalone',
-			'prettier/parser-babel',
-		],
-	},
-	ssr: {
-		noExternal: ['prettier'],
-	},
 	server: {
 		headers: {
 			'X-Content-Type-Options': 'nosniff',
@@ -174,18 +160,7 @@ export default defineConfig({
 			'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
 		},
 	},
-	build: {
-		sourcemap: true,
-		rollupOptions: {
-			output: {
-				manualChunks: {
-					vendor: ['react', 'react-dom', 'react-router-dom'],
-					ui: ['@headlessui/react', 'lucide-react'],
-					i18n: ['i18next', 'react-i18next'],
-				},
-			},
-		},
-	},
+
 	define: {
 		'process.env.NODE_ENV': JSON.stringify(process.env.VITE_APP_ENV),
 	},
