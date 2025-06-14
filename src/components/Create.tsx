@@ -1,16 +1,16 @@
 import { Tab } from '@headlessui/react';
-import { ArrowLeft, Code2, Eye, LayoutDashboard, Settings, Mail } from 'lucide-react';
+import { ArrowLeft, Code2, Download, Eye, LayoutDashboard, Mail, Settings } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
+import { sendErrorReport } from '../api/reporting';
 import { useEditor } from '../hooks/useEditor';
 import { CodeEditor } from './editor/CodeEditor';
 import { Preview } from './editor/Preview';
 import { Sidebar } from './editor/Sidebar';
 import { Terminal } from './editor/Terminal';
 import { Button } from './ui/Button';
-import { sendErrorReport } from '../api/reporting';
 
 // Helper to generate unique IDs
 const generateUniqueId = () => `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
@@ -18,8 +18,9 @@ const generateUniqueId = () => `${Date.now()}-${Math.random().toString(36).subst
 export const Create: React.FC = () => {
 	const navigate = useNavigate();
 	const { t } = useTranslation();
-	const { state, setState, compileProject, handleGenerateWithAI } = useEditor();
+	const { state, setState, compileProject, handleGenerateWithAI: generateWithAI } = useEditor();
 	const [tabIndex, setTabIndex] = useState(0);
+	const [isFirstRequest, setIsFirstRequest] = useState(true);
 
 	const handleSendReport = async () => {
 		try {
@@ -160,6 +161,71 @@ export const Create: React.FC = () => {
 		}
 	};
 
+	const handleGenerateWithAI = async () => {
+		try {
+			setState(prev => ({
+				...prev,
+				consoleMessages: [
+					...prev.consoleMessages,
+					{ id: generateUniqueId(), message: '🤖 Generating code with AI...' },
+				],
+			}));
+
+			const currentCode = state.files[state.selectedFile];
+			const result = await generateWithAI(state.prompt, currentCode, isFirstRequest);
+			const parsedResult = JSON.parse(result);
+
+			setState(prev => ({
+				...prev,
+				files: {
+					...prev.files,
+					[prev.selectedFile]: parsedResult['App.tsx'],
+				},
+				consoleMessages: [
+					...prev.consoleMessages,
+					{ id: generateUniqueId(), message: '✅ Code generated successfully' },
+				],
+			}));
+
+			// After first successful generation, set isFirstRequest to false
+			if (isFirstRequest) {
+				setIsFirstRequest(false);
+			}
+		} catch (error) {
+			setState(prev => ({
+				...prev,
+				consoleMessages: [
+					...prev.consoleMessages,
+					{
+						id: generateUniqueId(),
+						message: `❌ Failed to generate code: ${error instanceof Error ? error.message : 'Unknown error'}`,
+					},
+				],
+			}));
+		}
+	};
+
+	const handleDownload = () => {
+		const currentCode = state.files[state.selectedFile];
+		const blob = new Blob([currentCode], { type: 'text/plain' });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = state.selectedFile.split('/').pop() || 'code.tsx';
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		URL.revokeObjectURL(url);
+
+		setState(prev => ({
+			...prev,
+			consoleMessages: [
+				...prev.consoleMessages,
+				{ id: generateUniqueId(), message: '✅ File downloaded successfully' },
+			],
+		}));
+	};
+
 	return (
 		<div className="flex min-h-screen flex-col overflow-hidden bg-gradient-to-b from-black to-[#111]">
 			{/* Header */}
@@ -176,6 +242,7 @@ export const Create: React.FC = () => {
 					<h1 className="text-xl font-semibold text-white">BalBal.io Editor</h1>
 				</div>
 				<div className="flex items-center gap-2">
+
 					<Button
 						variant="outline"
 						onClick={handleSendReport}

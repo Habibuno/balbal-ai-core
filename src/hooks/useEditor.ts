@@ -2,41 +2,8 @@ import * as esbuild from 'esbuild-wasm';
 import { useEffect, useState } from 'react';
 
 import type { EditorState } from '../types/editor';
+import { createVirtualFilePlugin, dedupeImports, generateUniqueId, initializeEsbuild } from '../utils/editor';
 import { generateCodeWithOpenAI } from '../utils/openai';
-
-let esbuildInitPromise: Promise<void> | null = null;
-let isInitializing = false;
-const generateUniqueId = () => `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-
-async function initializeEsbuild(): Promise<void> {
-	if (esbuildInitPromise) return esbuildInitPromise;
-	if (isInitializing) {
-		return new Promise((resolve) => {
-			const checkInterval = setInterval(() => {
-				if (esbuildInitPromise) {
-					clearInterval(checkInterval);
-					resolve(esbuildInitPromise);
-				}
-			}, 100);
-		});
-	}
-
-	isInitializing = true;
-
-	try {
-		esbuildInitPromise = esbuild.initialize({
-			wasmURL: 'https://unpkg.com/esbuild-wasm@0.25.5/esbuild.wasm',
-			worker: false,
-		});
-
-		await esbuildInitPromise;
-		return esbuildInitPromise;
-	} catch (error) {
-		esbuildInitPromise = null;
-		isInitializing = false;
-		throw error;
-	}
-}
 
 export function useEditor() {
 	const [state, setState] = useState<EditorState>({
@@ -129,44 +96,6 @@ const styles = StyleSheet.create({
 		};
 	}, []);
 
-	const createVirtualFilePlugin = (files: Record<string, string>) => ({
-		name: 'virtual-fs',
-		setup(build: esbuild.PluginBuild) {
-			build.onResolve({ filter: /.*/ }, (args) => {
-				if (
-					args.path.startsWith('./') ||
-					args.path.startsWith('../') ||
-					args.path.startsWith('src/')
-				) {
-					let resolvedPath = new URL(args.path, `file://${args.resolveDir}/`).pathname.slice(1);
-
-					if (!/\.\w+$/.test(resolvedPath)) {
-						if (files[`${resolvedPath}.tsx`]) resolvedPath += '.tsx';
-						else if (files[`${resolvedPath}.ts`]) resolvedPath += '.ts';
-						else if (files[`${resolvedPath}.js`]) resolvedPath += '.js';
-						else if (files[`${resolvedPath}.jsx`]) resolvedPath += '.jsx';
-					}
-
-					return { path: resolvedPath, namespace: 'virtual' };
-				}
-
-				// Externals (libs tierces)
-				return { path: args.path, external: true };
-			});
-
-			build.onLoad({ filter: /.*/, namespace: 'virtual' }, (args) => {
-				const path = args.path.startsWith('src/') ? args.path : `src/${args.path}`;
-				const fileContent = files[path];
-				if (!fileContent) return;
-
-				return {
-					contents: fileContent,
-					loader: path.endsWith('.ts') || path.endsWith('.tsx') ? 'tsx' : 'js',
-				};
-			});
-		},
-	});
-
 	const compileProject = async (entry: string, allFiles: Record<string, string>) => {
 		if (!state.esbuildReady) {
 			await initializeEsbuild();
@@ -195,100 +124,50 @@ const styles = StyleSheet.create({
 		}
 	};
 
-	function dedupeImports(code: string): string {
-		const seen = new Set<string>();
-
-		return code
-			.split('\n')
-			.filter((line) => {
-				const match = line.match(/^import\s.+?from\s+['"](.+?)['"]/);
-				if (!match) return true;
-				if (seen.has(match[0])) return false;
-				seen.add(match[0]);
-				return true;
-			})
-			.join('\n');
-	}
-
-	const handleGenerateWithAI = async (): Promise<void> => {
-		if (!state.prompt.trim() || state.isGenerating) return;
-
-		if (!import.meta.env.VITE_OPENAI_API_KEY) {
-			const id = `error-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-			setState((prev) => ({
-				...prev,
-				consoleMessages: [...prev.consoleMessages, {
-					id,
-					message: '❌ La clé API OpenAI n\'est pas configurée. Veuillez ajouter VITE_OPENAI_API_KEY dans votre fichier .env',
-				}],
-			}));
-			return;
-		}
-
-		setState((prev) => ({ ...prev, isGenerating: true }));
-
-		const id = `gen-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-		setState((prev) => ({
-			...prev,
-			consoleMessages: [...prev.consoleMessages, {
-				id,
-				message: `🤖 Generating code with AI... (${new Date().toLocaleTimeString()})`,
-			}],
-		}));
-
+	const handleGenerateWithAI = async (prompt: string, currentCode?: string, isFirstRequest = false) => {
 		try {
-			const response = await generateCodeWithOpenAI(state.prompt);
-			let files: Record<string, string>;
-
-			if (typeof response === 'object' && response !== null) {
-				files = response as Record<string, string>;
-			} else if (typeof response === 'string') {
-				try {
-					// Try to parse as JSON first
-					const parsedResponse = JSON.parse(response);
-					if (typeof parsedResponse === 'object' && parsedResponse !== null) {
-						files = parsedResponse;
-					} else {
-						throw new Error('Parsed response is not an object');
-					}
-				} catch {
-					// If not JSON, treat as a single file
-					files = { 'App.tsx': response };
-				}
-			} else {
-				throw new TypeError('Invalid response format');
-			}
-
-			const formattedFiles: Record<string, string> = {};
-			for (const [key, rawCode] of Object.entries(files)) {
-				const deduped = dedupeImports(rawCode);
-				const filePath = key.startsWith('src/') ? key : `src/${key}`;
-				formattedFiles[filePath] = deduped;
+			if (!import.meta.env.VITE_OPENAI_API_KEY) {
+				throw new Error('OpenAI API key not configured');
 			}
 
 			setState(prev => ({
 				...prev,
-				files: { ...prev.files, ...formattedFiles },
-				selectedFile: Object.keys(formattedFiles)[0] || prev.selectedFile,
-				prompt: '',
-				consoleMessages: [...prev.consoleMessages, {
-					id: `success-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-					message: `✨ Generated ${Object.keys(formattedFiles).length} files at ${new Date().toLocaleTimeString()}`,
-				}],
+				isGenerating: true,
+				consoleMessages: [
+					...prev.consoleMessages,
+					{ id: generateUniqueId(), message: '🤖 Generating code with AI...' },
+				],
 			}));
-		} catch (error) {
-			console.error('Error generating code:', error);
-			setState((prev) => ({
+
+			const response = await generateCodeWithOpenAI(prompt, {
+				model: 'gpt-4o-mini',
+				temperature: 0.7,
+				maxTokens: 6000,
+			}, isFirstRequest, currentCode || '');
+
+			setState(prev => ({
 				...prev,
-				consoleMessages: [...prev.consoleMessages, {
-					id: `error-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-					message: `❌ ${error instanceof Error ? error.message : 'Failed to generate code'}`,
-				}],
+				isGenerating: false,
+				consoleMessages: [
+					...prev.consoleMessages,
+					{ id: generateUniqueId(), message: '✅ Code generated successfully' },
+				],
 			}));
-		} finally {
-			setState((prev) => ({ ...prev, isGenerating: false }));
+
+			return response;
+		} catch (error) {
+			setState(prev => ({
+				...prev,
+				isGenerating: false,
+				consoleMessages: [
+					...prev.consoleMessages,
+					{
+						id: generateUniqueId(),
+						message: `❌ Failed to generate code: ${error instanceof Error ? error.message : 'Unknown error'}`,
+					},
+				],
+			}));
+			throw error;
 		}
 	};
 

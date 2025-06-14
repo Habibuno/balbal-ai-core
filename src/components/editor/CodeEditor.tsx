@@ -1,7 +1,7 @@
 import { javascript } from '@codemirror/lang-javascript';
 import { oneDark } from '@codemirror/theme-one-dark';
 import CodeMirror from '@uiw/react-codemirror';
-import { CheckCheck, Copy } from 'lucide-react';
+import { Check, Copy, Download } from 'lucide-react';
 import type { KeyboardEvent } from 'react';
 import { useState } from 'react';
 
@@ -22,14 +22,22 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 }) => {
 	const [copied, setCopied] = useState(false);
 
-	const handleCopy = async () => {
-		try {
-			await navigator.clipboard.writeText(value);
-			setCopied(true);
-			setTimeout(() => setCopied(false), 2000);
-		} catch (err) {
-			console.error('Failed to copy:', err);
-		}
+	const handleCopy = () => {
+		navigator.clipboard.writeText(value);
+		setCopied(true);
+		setTimeout(() => setCopied(false), 2000);
+	};
+
+	const handleDownload = () => {
+		const blob = new Blob([value], { type: 'text/plain' });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = selectedFile.split('/').pop() || 'code.tsx';
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		URL.revokeObjectURL(url);
 	};
 
 	return (
@@ -41,13 +49,21 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 					onClick={handleCopy}
 					icon={
 						copied ? (
-							<CheckCheck className="h-4 w-4 text-green-500" />
+							<Check className="h-4 w-4 text-green-500" />
 						) : (
 							<Copy className="h-4 w-4" />
 						)
 					}
 				>
 					{copied ? 'Copié !' : 'Copier'}
+				</Button>
+				<Button
+					variant="outline"
+					size="sm"
+					onClick={handleDownload}
+					icon={<Download className="h-4 w-4" />}
+				>
+					Télécharger
 				</Button>
 			</div>
 			<div className="h-[calc(100%-3rem)] overflow-hidden rounded-xl border border-gray-800">
