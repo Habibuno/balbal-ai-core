@@ -25,10 +25,6 @@ function apiPlugin() {
 			});
 
 			server.middlewares.use((req: IncomingMessage, res: ServerResponse, next: () => void) => {
-				next();
-			});
-
-			server.middlewares.use((req: IncomingMessage, res: ServerResponse, next: () => void) => {
 				res.setHeader('Access-Control-Allow-Origin', '*');
 				res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
 				res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -67,7 +63,6 @@ function apiPlugin() {
 					req.on('end', async () => {
 						try {
 							const report = JSON.parse(body);
-
 							const { error, context } = report;
 							const timestamp = new Date().toISOString();
 
@@ -98,7 +93,7 @@ Additional Data: ${JSON.stringify(context.additionalData || {}, null, 2)}
 
 							const recipient = env.VITE_REPORT_RECIPIENT;
 							if (!recipient) {
-								throw new Error('❌ No recipient email configured');
+								throw new Error('No recipient email configured');
 							}
 
 							await transporter.sendMail({
@@ -116,7 +111,6 @@ Additional Data: ${JSON.stringify(context.additionalData || {}, null, 2)}
 								message: 'Error report sent successfully',
 							}));
 						} catch (error) {
-							console.error('❌ Failed to process error report:', error);
 							res.statusCode = 500;
 							res.setHeader('Content-Type', 'application/json');
 							res.end(JSON.stringify({
@@ -126,7 +120,6 @@ Additional Data: ${JSON.stringify(context.additionalData || {}, null, 2)}
 						}
 					});
 				} catch (error) {
-					console.error('❌ Server error:', error);
 					res.statusCode = 500;
 					res.setHeader('Content-Type', 'application/json');
 					res.end(JSON.stringify({
