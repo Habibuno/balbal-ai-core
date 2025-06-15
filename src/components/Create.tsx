@@ -24,19 +24,13 @@ export const Create: React.FC = () => {
 
 	const handleSendReport = async () => {
 		try {
-			await sendErrorReport({
-				error: {
-					name: 'Manual Report',
-					message: 'Manual error report from user',
-				},
-				context: {
-					component: 'Create',
-					action: 'Manual Report',
-					additionalData: {
-						currentFile: state.selectedFile,
-						files: Object.keys(state.files),
-						lastConsoleMessage: state.consoleMessages[state.consoleMessages.length - 1]?.message,
-					},
+			await sendErrorReport(new Error('Manual error report from user'), {
+				component: 'Create',
+				action: 'Manual Report',
+				additionalData: {
+					currentFile: state.selectedFile,
+					files: Object.keys(state.files),
+					lastConsoleMessage: state.consoleMessages[state.consoleMessages.length - 1]?.message,
 				},
 			});
 

@@ -138,19 +138,12 @@ export function Preview({ files }: PreviewProps) {
             render(React.createElement(App));
           } catch (error) {
             // Report the error
-            sendErrorReport({
-              error: {
-                name: error.name,
-                message: error.message,
-                stack: error.stack,
-              },
-              context: {
-                component: 'Preview',
-                action: 'Code Execution',
-                additionalData: {
-                  files: Object.keys(files),
-                  selectedFile: files[Object.keys(files)[0]],
-                },
+            sendErrorReport(error, {
+              component: 'Preview',
+              action: 'Code Execution',
+              additionalData: {
+                files: Object.keys(files),
+                selectedFile: files[Object.keys(files)[0]],
               },
             });
             throw error;
@@ -161,19 +154,12 @@ export function Preview({ files }: PreviewProps) {
 			<LiveError
 				style={{ color: 'salmon' }}
 				onError={(error: Error) => {
-					sendErrorReport({
-						error: {
-							name: error.name,
-							message: error.message,
-							stack: error.stack,
-						},
-						context: {
-							component: 'Preview',
-							action: 'LiveError',
-							additionalData: {
-								files: Object.keys(files),
-								selectedFile: files[Object.keys(files)[0]],
-							},
+					sendErrorReport(error, {
+						component: 'Preview',
+						action: 'LiveError',
+						additionalData: {
+							files: Object.keys(files),
+							selectedFile: files[Object.keys(files)[0]],
 						},
 					});
 				}}

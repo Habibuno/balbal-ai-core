@@ -1,42 +1,42 @@
-type ErrorReport = {
-	error: {
-		name: string;
-		message: string;
-		stack?: string;
-	};
-	context?: {
-		component?: string;
-		action?: string;
-		userInfo?: Record<string, unknown>;
-		additionalData?: Record<string, unknown>;
-	};
+const baseUrl = import.meta.env.VITE_APP_ENV === 'production'
+	? '/.netlify/functions'
+	: import.meta.env.VITE_APP_NETLIFY === 'true'
+		? 'http://localhost:9999/.netlify/functions'
+		: 'http://localhost:5173/api';
+
+type ErrorContext = {
+	component?: string;
+	action?: string;
+	userInfo?: Record<string, string | number | boolean | null>;
+	additionalData?: Record<string, string | number | boolean | null | unknown[]>;
 };
 
-export async function sendErrorReport(report: ErrorReport): Promise<void> {
+export async function sendErrorReport(error: Error, context?: ErrorContext): Promise<void> {
+	const requestId = `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
 	try {
-		const url = `${window.location.origin}/api/report-error`;
-
-		console.log('Sending error report to:', url);
-		console.log('Report data:', report);
-
-		const response = await fetch(url, {
+		const response = await fetch(`${baseUrl}/report-error`, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
+				'X-Request-ID': requestId,
 			},
-			body: JSON.stringify(report),
+			body: JSON.stringify({
+				error: {
+					name: error.name,
+					message: error.message,
+					stack: error.stack,
+				},
+				context,
+				requestId,
+			}),
 		});
 
-		console.log('Response status:', response.status);
-		console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+		const data = await response.json();
 
 		if (!response.ok) {
-			const errorText = await response.text();
-			throw new Error(`Failed to send error report: ${response.statusText} - ${errorText}`);
+			throw new Error(data.error || 'Failed to send error report');
 		}
-
-		const result = await response.json();
-		console.log('Success response:', result);
 	} catch (error) {
 		console.error('Failed to send error report:', error);
 		throw error;

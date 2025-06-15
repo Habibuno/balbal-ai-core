@@ -1,11 +1,19 @@
+import process from 'node:process';
+
 import type { Handler } from '@netlify/functions';
 import nodemailer from 'nodemailer';
 
 const handler: Handler = async (event) => {
+	const requestId = event.headers['x-request-id'] || `func_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
+	// CORS headers
 	const headers = {
 		'Access-Control-Allow-Origin': '*',
 		'Access-Control-Allow-Methods': 'POST, OPTIONS',
-		'Access-Control-Allow-Headers': 'Content-Type',
+		'Access-Control-Allow-Headers': '*',
+		'Access-Control-Max-Age': '86400',
+		'X-Function-Source': 'netlify-function-report-error',
+		'X-Request-ID': requestId,
 	};
 
 	// Handle preflight requests
@@ -25,13 +33,17 @@ const handler: Handler = async (event) => {
 			body: JSON.stringify({
 				success: false,
 				error: 'Method Not Allowed',
+				source: 'netlify-function',
+				functionId: 'report-error-v1',
+				requestId,
+				timestamp: new Date().toISOString(),
 			}),
 		};
 	}
 
 	try {
 		const report = JSON.parse(event.body || '{}');
-		const { error, context } = report;
+		const { error, context, requestId: reportRequestId } = report;
 		const timestamp = new Date().toISOString();
 
 		const transporter = nodemailer.createTransport({
@@ -48,13 +60,14 @@ const handler: Handler = async (event) => {
 Error Report - ${timestamp}
 ========================================
 
+Request ID: ${reportRequestId || requestId}
+Environment: ${process.env.VITE_APP_ENV || 'production'}
+
 Error Details:
 -------------
 Name: ${error.name}
 Message: ${error.message}
 Stack: ${error.stack || 'No stack trace available'}
-
-Environment: ${process.env.VITE_APP_ENV || 'production'}
 
 `;
 
@@ -77,7 +90,7 @@ Additional Data: ${JSON.stringify(context.additionalData || {}, null, 2)}
 		await transporter.sendMail({
 			from: process.env.VITE_SMTP_USER,
 			to: recipient,
-			subject: `[BalBal.io] Error Report - ${error.name}`,
+			subject: `[BalBal.io] Error Report - ${error.name} (${reportRequestId || requestId})`,
 			text: reportContent,
 			html: reportContent.replace(/\n/g, '<br>'),
 		});
@@ -88,6 +101,11 @@ Additional Data: ${JSON.stringify(context.additionalData || {}, null, 2)}
 			body: JSON.stringify({
 				success: true,
 				message: 'Error report sent successfully',
+				source: 'netlify-function',
+				functionId: 'report-error-v1',
+				requestId: reportRequestId || requestId,
+				timestamp,
+				environment: process.env.VITE_APP_ENV || 'production',
 			}),
 		};
 	} catch (error) {
@@ -97,6 +115,11 @@ Additional Data: ${JSON.stringify(context.additionalData || {}, null, 2)}
 			body: JSON.stringify({
 				success: false,
 				error: error instanceof Error ? error.message : 'Internal Server Error',
+				source: 'netlify-function',
+				functionId: 'report-error-v1',
+				requestId,
+				timestamp: new Date().toISOString(),
+				environment: process.env.VITE_APP_ENV || 'production',
 			}),
 		};
 	}
