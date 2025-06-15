@@ -44,6 +44,7 @@ type PreviewScope = {
 	useCallback: typeof React.useCallback;
 	useMemo: typeof React.useMemo;
 	useContext: typeof React.useContext;
+	sendErrorReport: typeof sendErrorReport;
 } & typeof RNW;
 
 export function Preview({ files }: PreviewProps) {
@@ -79,6 +80,7 @@ export function Preview({ files }: PreviewProps) {
 		render,
 		module: { exports: {} },
 		exports: {},
+		sendErrorReport,
 	};
 
 	let cleaned = combinedCode;
@@ -138,14 +140,16 @@ export function Preview({ files }: PreviewProps) {
             render(React.createElement(App));
           } catch (error) {
             // Report the error
-            sendErrorReport(error, {
-              component: 'Preview',
-              action: 'Code Execution',
-              additionalData: {
-                files: Object.keys(files),
-                selectedFile: files[Object.keys(files)[0]],
-              },
-            });
+            if (typeof sendErrorReport === 'function') {
+              sendErrorReport(error, {
+                component: 'Preview',
+                action: 'Code Execution',
+                additionalData: {
+                  files: Object.keys(files),
+                  selectedFile: files[Object.keys(files)[0]],
+                },
+              });
+            }
             throw error;
           }
         })();
