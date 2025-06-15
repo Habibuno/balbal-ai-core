@@ -26,6 +26,7 @@ export async function sendErrorReport(error: Error, context?: ErrorContext): Pro
 					name: error.name,
 					message: error.message,
 					stack: error.stack,
+					generatedCode: context?.additionalData?.generatedCode,
 				},
 				context,
 				requestId,

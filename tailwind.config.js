@@ -8,7 +8,41 @@ export default {
 				rajdhani: ['Rajdhani', 'sans-serif'],
 				tech: ['Share Tech Mono', 'monospace'],
 			},
+			typography: {
+				DEFAULT: {
+					css: {
+						color: '#fff',
+						a: {
+							color: '#60a5fa',
+							'&:hover': {
+								color: '#93c5fd',
+							},
+						},
+						h1: {
+							color: '#fff',
+						},
+						h2: {
+							color: '#fff',
+						},
+						h3: {
+							color: '#fff',
+						},
+						h4: {
+							color: '#fff',
+						},
+						strong: {
+							color: '#fff',
+						},
+						code: {
+							color: '#fff',
+						},
+						blockquote: {
+							color: '#9ca3af',
+						},
+					},
+				},
+			},
 		},
 	},
-	plugins: [],
+	plugins: [require('@tailwindcss/typography')],
 };

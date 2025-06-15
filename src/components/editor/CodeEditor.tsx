@@ -1,9 +1,10 @@
 import { javascript } from '@codemirror/lang-javascript';
 import { oneDark } from '@codemirror/theme-one-dark';
 import CodeMirror from '@uiw/react-codemirror';
-import { Check, Copy, Download } from 'lucide-react';
+import { Check, Copy, Download, Rocket } from 'lucide-react';
 import type { KeyboardEvent } from 'react';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { Button } from '../ui/Button';
 
@@ -21,6 +22,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 	selectedFile,
 }) => {
 	const [copied, setCopied] = useState(false);
+	const navigate = useNavigate();
 
 	const handleCopy = () => {
 		navigator.clipboard.writeText(value);
@@ -43,6 +45,14 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 	return (
 		<div className="h-full p-4">
 			<div className="mb-4 flex justify-end gap-2">
+				<Button
+					variant="outline"
+					size="sm"
+					onClick={() => navigate('/deployment-guide')}
+					icon={<Rocket className="h-4 w-4" />}
+				>
+					Deployment Guide
+				</Button>
 				<Button
 					variant="outline"
 					size="sm"

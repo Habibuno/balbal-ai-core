@@ -1,3 +1,4 @@
+import type { ComponentType } from 'react';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { LiveError, LivePreview, LiveProvider } from 'react-live';
@@ -14,18 +15,28 @@ type ReactComponentProps = {
 	[key: string]: unknown;
 };
 
+type NavigatorProps = {
+	children?: React.ReactNode;
+	[key: string]: unknown;
+};
+
+type ScreenProps = {
+	component: ComponentType<Record<string, unknown>>;
+	[key: string]: unknown;
+};
+
 type ReactNavigationType = {
-	NavigationContainer: React.ComponentType<ReactComponentProps>;
+	NavigationContainer: ComponentType<NavigatorProps>;
 	createNativeStackNavigator: () => {
-		Navigator: React.ComponentType<ReactComponentProps>;
-		Screen: React.ComponentType<ReactComponentProps>;
+		Navigator: ComponentType<NavigatorProps>;
+		Screen: ComponentType<ScreenProps>;
 	};
 };
 
 type ReactNavigationBottomTabsType = {
 	createBottomTabNavigator: () => {
-		Navigator: React.ComponentType<ReactComponentProps>;
-		Screen: React.ComponentType<ReactComponentProps>;
+		Navigator: ComponentType<NavigatorProps>;
+		Screen: ComponentType<ScreenProps>;
 	};
 };
 
@@ -45,6 +56,7 @@ type PreviewScope = {
 	useMemo: typeof React.useMemo;
 	useContext: typeof React.useContext;
 	sendErrorReport: typeof sendErrorReport;
+	files: Record<string, string>;
 } & typeof RNW;
 
 export function Preview({ files }: PreviewProps) {
@@ -74,13 +86,31 @@ export function Preview({ files }: PreviewProps) {
 		useCallback: React.useCallback,
 		useMemo: React.useMemo,
 		useContext: React.useContext,
-		ReactNavigationNative: (window as unknown as { ReactNavigationNative: ReactNavigationType }).ReactNavigationNative,
-		ReactNavigationNativeStack: (window as unknown as { ReactNavigationNativeStack: ReactNavigationType }).ReactNavigationNativeStack,
-		ReactNavigationBottomTabs: (window as unknown as { ReactNavigationBottomTabs: ReactNavigationBottomTabsType }).ReactNavigationBottomTabs,
+		ReactNavigationNative: {
+			NavigationContainer: ({ children }) => React.createElement('div', { style: { flex: 1 } }, children),
+			createNativeStackNavigator: () => ({
+				Navigator: ({ children }) => React.createElement('div', { style: { flex: 1 } }, children),
+				Screen: ({ component: Component }) => React.createElement(Component),
+			}),
+		},
+		ReactNavigationNativeStack: {
+			NavigationContainer: ({ children }) => React.createElement('div', { style: { flex: 1 } }, children),
+			createNativeStackNavigator: () => ({
+				Navigator: ({ children }) => React.createElement('div', { style: { flex: 1 } }, children),
+				Screen: ({ component: Component }) => React.createElement(Component),
+			}),
+		},
+		ReactNavigationBottomTabs: {
+			createBottomTabNavigator: () => ({
+				Navigator: ({ children }) => React.createElement('div', { style: { flex: 1 } }, children),
+				Screen: ({ component: Component }) => React.createElement(Component),
+			}),
+		},
 		render,
 		module: { exports: {} },
 		exports: {},
 		sendErrorReport,
+		files,
 	};
 
 	let cleaned = combinedCode;
@@ -91,7 +121,10 @@ export function Preview({ files }: PreviewProps) {
 		.replace(/require\(['"]@react-navigation\/native['"]\)/g, 'ReactNavigationNative')
 		.replace(/require\(['"]@react-navigation\/native-stack['"]\)/g, 'ReactNavigationNativeStack')
 		.replace(/require\(['"]@react-navigation\/bottom-tabs['"]\)/g, 'ReactNavigationBottomTabs')
-		.replace(/require\(['"]@react-native-community\/hooks['"]\)/g, '{ useDimensions }');
+		.replace(/require\(['"]@react-native-community\/hooks['"]\)/g, '{ useDimensions }')
+		.replace(/createStackNavigator/g, 'ReactNavigationNativeStack.createNativeStackNavigator')
+		.replace(/createBottomTabNavigator/g, 'ReactNavigationBottomTabs.createBottomTabNavigator')
+		.replace(/NavigationContainer/g, 'ReactNavigationNative.NavigationContainer');
 
 	return (
 		<LiveProvider
@@ -140,16 +173,22 @@ export function Preview({ files }: PreviewProps) {
             render(React.createElement(App));
           } catch (error) {
             // Report the error
-            if (typeof sendErrorReport === 'function') {
-              sendErrorReport(error, {
-                component: 'Preview',
-                action: 'Code Execution',
-                additionalData: {
-                  files: Object.keys(files),
-                  selectedFile: files[Object.keys(files)[0]],
-                },
-              });
-            }
+            console.error('Preview error:', error);
+            // Get the generated code from App.tsx
+            const generatedCode = files['App.tsx'] || '';
+            
+            sendErrorReport(error, {
+              component: 'Preview',
+              action: 'LiveError',
+              additionalData: {
+                files: Object.keys(files),
+                selectedFile: files[Object.keys(files)[0]] || '',
+                errorStack: error.stack || null,
+                errorName: error.name || 'Unknown Error',
+                errorMessage: error.message || 'No error message available',
+                generatedCode: generatedCode,
+              },
+            });
             throw error;
           }
         })();
@@ -158,12 +197,20 @@ export function Preview({ files }: PreviewProps) {
 			<LiveError
 				style={{ color: 'salmon' }}
 				onError={(error: Error) => {
+					console.error('Preview error:', error);
+					// Get the generated code from App.tsx
+					const generatedCode = files['App.tsx'] || '';
+
 					sendErrorReport(error, {
 						component: 'Preview',
 						action: 'LiveError',
 						additionalData: {
 							files: Object.keys(files),
-							selectedFile: files[Object.keys(files)[0]],
+							selectedFile: files[Object.keys(files)[0]] || '',
+							errorStack: error.stack || null,
+							errorName: error.name || 'Unknown Error',
+							errorMessage: error.message || 'No error message available',
+							generatedCode,
 						},
 					});
 				}}

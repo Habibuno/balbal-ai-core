@@ -6,6 +6,7 @@ import { Dashboard } from './components/dashboard/Dashboard';
 import { Landing } from './components/Landing';
 import { BetaBanner } from './components/ui/BetaBanner';
 import { Wizard } from './components/wizard/Wizard';
+import DeploymentGuidePage from './pages/DeploymentGuidePage';
 import { PricingPage } from './pages/PricingPage';
 import SettingsPage from './pages/SettingsPage';
 
@@ -21,6 +22,7 @@ function App() {
 						<Route path="/wizard" element={<Wizard />} />
 						<Route path="/dashboard" element={<Dashboard />} />
 						<Route path="/pricing" element={<PricingPage />} />
+						<Route path="/deployment-guide" element={<DeploymentGuidePage />} />
 						<Route path="/" element={<Landing />} />
 					</Routes>
 				</main>

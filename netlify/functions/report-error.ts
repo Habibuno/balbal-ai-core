@@ -79,6 +79,10 @@ Component: ${context.component || 'N/A'}
 Action: ${context.action || 'N/A'}
 User Info: ${JSON.stringify(context.userInfo || {}, null, 2)}
 Additional Data: ${JSON.stringify(context.additionalData || {}, null, 2)}
+
+Generated Code:
+-------------
+${context.additionalData?.generatedCode || 'No code available'}
 `;
 		}
 
