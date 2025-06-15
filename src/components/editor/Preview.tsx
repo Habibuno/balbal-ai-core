@@ -4,7 +4,6 @@ import { LiveError, LivePreview, LiveProvider } from 'react-live';
 import * as RNW from 'react-native-web';
 
 import { sendErrorReport } from '../../api/reporting';
-import { reportError } from '../../utils/reporting';
 
 type PreviewProps = {
 	files: Record<string, string>;
