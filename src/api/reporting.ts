@@ -1,8 +1,8 @@
 const baseUrl = import.meta.env.VITE_APP_ENV === 'production'
 	? '/.netlify/functions'
 	: import.meta.env.VITE_APP_NETLIFY === 'true'
-		? 'http://localhost:9999/.netlify/functions'
-		: 'http://localhost:5173/api';
+		? `${import.meta.env.VITE_API_BASE_URL}/.netlify/functions`
+		: `${import.meta.env.VITE_API_BASE_URL}/api`;
 
 type ErrorContext = {
 	component?: string;
