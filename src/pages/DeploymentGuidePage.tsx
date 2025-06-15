@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import ReactMarkdown from 'react-markdown';
 
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
@@ -100,9 +101,9 @@ function DeploymentGuidePage() {
 			<Card className="p-6">
 				<div className="prose prose-invert prose-headings:text-white prose-p:text-gray-300 prose-li:text-gray-300 max-w-none">
 					{activeTab === 'apple' ? (
-						<div className="markdown">{appleGuide}</div>
+						<ReactMarkdown>{appleGuide}</ReactMarkdown>
 					) : (
-						<div className="markdown">{androidGuide}</div>
+						<ReactMarkdown>{androidGuide}</ReactMarkdown>
 					)}
 				</div>
 			</Card>

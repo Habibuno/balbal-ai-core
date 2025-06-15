@@ -263,18 +263,21 @@ export function Preview({ files }: PreviewProps) {
 				<div className="absolute left-1/2 top-0 h-6 w-40 -translate-x-1/2 rounded-b-3xl bg-gray-800" />
 				{/* Screen */}
 				<div className="overflow-hidden rounded-[40px] bg-white m-4">
-					<LivePreview
-						style={{
-							background: '#fff',
-							minHeight: 600,
-							width: '100%',
-							display: 'flex',
-							flexDirection: 'column',
-							alignItems: 'center',
-							justifyContent: 'center',
-							height: '100%',
-						}}
-					/>
+					<div style={{ paddingTop: 20 }}>
+						<LivePreview
+							style={{
+								background: '#fff',
+								minHeight: 600,
+								width: '100%',
+								display: 'flex',
+								flexDirection: 'column',
+								alignItems: 'center',
+								justifyContent: 'flex-start',
+								height: '100%',
+								overflow: 'auto',
+							}}
+						/>
+					</div>
 				</div>
 			</div>
 			<LiveError />
