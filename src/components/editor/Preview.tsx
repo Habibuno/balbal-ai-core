@@ -1,4 +1,4 @@
-import type { ComponentType } from 'react';
+import type { ComponentType, ReactElement } from 'react';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { LiveError, LivePreview, LiveProvider } from 'react-live';
@@ -22,7 +22,18 @@ type NavigatorProps = {
 
 type ScreenProps = {
 	component: ComponentType<Record<string, unknown>>;
+	name: string;
 	[key: string]: unknown;
+};
+
+type NavigationProps = {
+	navigation: {
+		navigate: (screenName: string, params?: Record<string, unknown>) => void;
+		goBack: () => void;
+	};
+	route: {
+		params: Record<string, unknown>;
+	};
 };
 
 type ReactNavigationType = {
@@ -59,6 +70,88 @@ type PreviewScope = {
 	files: Record<string, string>;
 } & typeof RNW;
 
+// Create a navigation context
+const NavigationContext = React.createContext<{
+	navigation: {
+		navigate: (screenName: string, params?: Record<string, unknown>) => void;
+		goBack: () => void;
+	};
+	route: {
+		params: Record<string, unknown>;
+	};
+} | null>(null);
+
+function NavigationProvider({ children }: { children: React.ReactNode }) {
+	const [currentScreen, setCurrentScreen] = React.useState('Home');
+	const [screenParams, setScreenParams] = React.useState<Record<string, unknown>>({});
+	const [screenHistory, setScreenHistory] = React.useState<string[]>(['Home']);
+
+	const navigation = {
+		navigate: (screenName: string, params?: Record<string, unknown>) => {
+			console.log('Navigating to:', screenName); // Debug log
+			setCurrentScreen(screenName);
+			setScreenHistory(prev => [...prev, screenName]);
+			if (params) {
+				setScreenParams(params);
+			}
+		},
+		goBack: () => {
+			if (screenHistory.length > 1) {
+				const newHistory = screenHistory.slice(0, -1);
+				const previousScreen = newHistory[newHistory.length - 1];
+				setScreenHistory(newHistory);
+				setCurrentScreen(previousScreen);
+			}
+		},
+	};
+
+	const screens = React.Children.toArray(children);
+	const currentScreenComponent = screens.find(
+		(child) => React.isValidElement(child) && child.props.name === currentScreen
+	) as ReactElement | undefined;
+
+	if (!currentScreenComponent) {
+		console.error('Screen not found:', currentScreen); // Debug log
+		return null;
+	}
+
+	const screenProps = {
+		navigation,
+		route: { params: screenParams },
+	};
+
+	return (
+		<NavigationContext.Provider value={screenProps}>
+			<div style={{ flex: 1, height: '100%' }}>
+				{React.cloneElement(currentScreenComponent, screenProps)}
+			</div>
+		</NavigationContext.Provider>
+	);
+}
+
+function createNavigationComponents() {
+	const NavigationContainer: ComponentType<NavigatorProps> = ({ children }) =>
+		React.createElement('div', { style: { flex: 1, height: '100%' } }, children);
+
+	const Navigator: ComponentType<NavigatorProps> = ({ children }) =>
+		React.createElement(NavigationProvider, { children });
+
+	const Screen: ComponentType<ScreenProps> = ({ component: Component, name }) => {
+		const navigationContext = React.useContext(NavigationContext);
+		if (!navigationContext) {
+			console.error('Navigation context not found for screen:', name);
+			return null;
+		}
+
+		return React.createElement(Component, {
+			...navigationContext,
+			name,
+		});
+	};
+
+	return { NavigationContainer, Navigator, Screen };
+}
+
 export function Preview({ files }: PreviewProps) {
 	function render(el: React.ReactElement) {
 		const mount = document.createElement('div');
@@ -76,6 +169,8 @@ export function Preview({ files }: PreviewProps) {
 		)
 		.join('\n');
 
+	const { NavigationContainer, Navigator, Screen } = createNavigationComponents();
+
 	const scope: PreviewScope = {
 		React,
 		ReactDOM,
@@ -87,23 +182,23 @@ export function Preview({ files }: PreviewProps) {
 		useMemo: React.useMemo,
 		useContext: React.useContext,
 		ReactNavigationNative: {
-			NavigationContainer: ({ children }) => React.createElement('div', { style: { flex: 1 } }, children),
+			NavigationContainer,
 			createNativeStackNavigator: () => ({
-				Navigator: ({ children }) => React.createElement('div', { style: { flex: 1 } }, children),
-				Screen: ({ component: Component }) => React.createElement(Component),
+				Navigator,
+				Screen,
 			}),
 		},
 		ReactNavigationNativeStack: {
-			NavigationContainer: ({ children }) => React.createElement('div', { style: { flex: 1 } }, children),
+			NavigationContainer,
 			createNativeStackNavigator: () => ({
-				Navigator: ({ children }) => React.createElement('div', { style: { flex: 1 } }, children),
-				Screen: ({ component: Component }) => React.createElement(Component),
+				Navigator,
+				Screen,
 			}),
 		},
 		ReactNavigationBottomTabs: {
 			createBottomTabNavigator: () => ({
-				Navigator: ({ children }) => React.createElement('div', { style: { flex: 1 } }, children),
-				Screen: ({ component: Component }) => React.createElement(Component),
+				Navigator,
+				Screen,
 			}),
 		},
 		render,
@@ -121,6 +216,7 @@ export function Preview({ files }: PreviewProps) {
 		.replace(/require\(['"]@react-navigation\/native['"]\)/g, 'ReactNavigationNative')
 		.replace(/require\(['"]@react-navigation\/native-stack['"]\)/g, 'ReactNavigationNativeStack')
 		.replace(/require\(['"]@react-navigation\/bottom-tabs['"]\)/g, 'ReactNavigationBottomTabs')
+		.replace(/require\(['"]@react-navigation\/stack['"]\)/g, 'ReactNavigationNativeStack')
 		.replace(/require\(['"]@react-native-community\/hooks['"]\)/g, '{ useDimensions }')
 		.replace(/createStackNavigator/g, 'ReactNavigationNativeStack.createNativeStackNavigator')
 		.replace(/createBottomTabNavigator/g, 'ReactNavigationBottomTabs.createBottomTabNavigator')
@@ -130,91 +226,38 @@ export function Preview({ files }: PreviewProps) {
 		<LiveProvider
 			code={cleaned}
 			scope={scope}
-			noInline
+			noInline={false}
 			transformCode={code => `
-        // Wrap the code in a function to avoid variable hoisting issues
-        (function() {
-          try {
-            const baseStyles = {
-              container: {
-                flex: 1,
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: 16,
-                backgroundColor: '#fff',
-              },
-              text: {
-                fontSize: 16,
-                color: '#000',
-              },
-              button: {
-                backgroundColor: '#007AFF',
-                padding: 12,
-                borderRadius: 8,
-                marginTop: 16,
-              },
-              buttonText: {
-                color: '#fff',
-                fontSize: 16,
-                textAlign: 'center',
-              },
-            };
-
-            // Create a global styles object that can be used by the app
-            window.appStyles = baseStyles;
-
-            ${code}
-
-            // If the app doesn't define its own styles, use the base styles
-            if (typeof styles === 'undefined') {
-              const styles = window.appStyles;
-            }
-
-            render(React.createElement(App));
-          } catch (error) {
-            // Report the error
-            console.error('Preview error:', error);
-            // Get the generated code from App.tsx
-            const generatedCode = files['App.tsx'] || '';
-            
-            sendErrorReport(error, {
-              component: 'Preview',
-              action: 'LiveError',
-              additionalData: {
-                files: Object.keys(files),
-                selectedFile: files[Object.keys(files)[0]] || '',
-                errorStack: error.stack || null,
-                errorName: error.name || 'Unknown Error',
-                errorMessage: error.message || 'No error message available',
-                generatedCode: generatedCode,
-              },
-            });
-            throw error;
-          }
-        })();
-      `}
+				(function() {
+					try {
+						const App = (function() {
+							${code}
+							return App;
+						})();
+						
+						const appElement = React.createElement(App);
+						return appElement;
+					} catch (error) {
+						console.error('Preview error:', error);
+						const generatedCode = files['App.tsx'] || '';
+						
+						sendErrorReport(error, {
+							component: 'Preview',
+							action: 'LiveError',
+							additionalData: {
+								files: Object.keys(files),
+								selectedFile: files[Object.keys(files)[0]] || '',
+								errorStack: error.stack || null,
+								errorName: error.name || 'Unknown Error',
+								errorMessage: error.message || 'No error message available',
+								generatedCode,
+							},
+						});
+						throw error;
+					}
+				})();
+			`}
 		>
-			<LiveError
-				style={{ color: 'salmon' }}
-				onError={(error: Error) => {
-					console.error('Preview error:', error);
-					// Get the generated code from App.tsx
-					const generatedCode = files['App.tsx'] || '';
-
-					sendErrorReport(error, {
-						component: 'Preview',
-						action: 'LiveError',
-						additionalData: {
-							files: Object.keys(files),
-							selectedFile: files[Object.keys(files)[0]] || '',
-							errorStack: error.stack || null,
-							errorName: error.name || 'Unknown Error',
-							errorMessage: error.message || 'No error message available',
-							generatedCode,
-						},
-					});
-				}}
-			/>
 			<div className="relative mx-auto w-[375px] rounded-[60px] shadow-xl">
 				{/* Notch */}
 				<div className="absolute left-1/2 top-0 h-6 w-40 -translate-x-1/2 rounded-b-3xl bg-gray-800" />
@@ -229,10 +272,12 @@ export function Preview({ files }: PreviewProps) {
 							flexDirection: 'column',
 							alignItems: 'center',
 							justifyContent: 'center',
+							height: '100%',
 						}}
 					/>
 				</div>
 			</div>
+			<LiveError />
 		</LiveProvider>
 	);
 }
