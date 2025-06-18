@@ -1,7 +1,5 @@
 type EnvConfig = {
 	smtp: {
-		host: string;
-		port: number;
 		user: string;
 		pass: string;
 	};
@@ -13,8 +11,6 @@ type EnvConfig = {
 
 export const env: EnvConfig = {
 	smtp: {
-		host: import.meta.env.VITE_SMTP_HOST || 'smtp.gmail.com',
-		port: Number.parseInt(import.meta.env.VITE_SMTP_PORT || '587', 10),
 		user: import.meta.env.VITE_SMTP_USER || '',
 		pass: import.meta.env.VITE_SMTP_PASS || '',
 	},

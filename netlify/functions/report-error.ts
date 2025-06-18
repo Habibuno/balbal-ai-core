@@ -47,9 +47,9 @@ const handler: Handler = async (event) => {
 		const timestamp = new Date().toISOString();
 
 		const transporter = nodemailer.createTransport({
-			host: process.env.VITE_SMTP_HOST || 'smtp.gmail.com',
-			port: Number.parseInt(process.env.VITE_SMTP_PORT || '587', 10),
-			secure: false,
+			service: 'gmail',
+			port: 465,
+			secure: true,
 			auth: {
 				user: process.env.VITE_SMTP_USER,
 				pass: process.env.VITE_SMTP_PASS,

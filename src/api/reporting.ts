@@ -13,6 +13,7 @@ type ErrorContext = {
 
 export async function sendErrorReport(error: Error, context?: ErrorContext): Promise<void> {
 	const requestId = `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+	console.log('baseUrl', baseUrl);
 
 	try {
 		const response = await fetch(`${baseUrl}/report-error`, {

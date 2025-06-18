@@ -22,9 +22,9 @@ class ReportingService {
 	private initializeTransporter() {
 		try {
 			this.transporter = nodemailer.createTransport({
-				host: env.smtp.host,
-				port: env.smtp.port,
-				secure: false,
+				service: 'gmail',
+				port: 465,
+				secure: true,
 				auth: {
 					user: env.smtp.user,
 					pass: env.smtp.pass,
@@ -89,18 +89,13 @@ Additional Data: ${JSON.stringify(context.additionalData || {}, null, 2)}
 				text: reportContent,
 				html: reportContent.replace(/\n/g, '<br>'),
 			});
-
-			console.log('Error report sent successfully');
 		} catch (error) {
 			console.error('Failed to send error report:', error);
 		}
 	}
 }
 
-// Create a singleton instance
 export const reportingService = new ReportingService();
-
-// Helper function to report errors
 export async function reportError(error: Error, context?: ErrorReport['context']): Promise<void> {
 	await reportingService.sendErrorReport({ error, context });
 }

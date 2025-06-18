@@ -12,14 +12,16 @@ function apiPlugin() {
 		name: 'api-plugin',
 		configureServer(server: ViteDevServer) {
 			const env = loadEnv(process.env.NODE_ENV || 'development', process.cwd(), '');
-
 			const transporter = nodemailer.createTransport({
-				host: env.VITE_SMTP_HOST || 'smtp.gmail.com',
-				port: Number.parseInt(env.VITE_SMTP_PORT || '587', 10),
-				secure: false,
+				service: 'gmail',
+				port: 465,
+				secure: true,
 				auth: {
 					user: env.VITE_SMTP_USER,
 					pass: env.VITE_SMTP_PASS,
+				},
+				tls: {
+					rejectUnauthorized: false,
 				},
 			});
 
